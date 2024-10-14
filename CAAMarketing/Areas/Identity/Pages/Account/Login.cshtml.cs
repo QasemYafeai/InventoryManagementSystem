@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
 using CAAMarketing.Data;
 using CAAMarketing.Utilities;
+using Google.Authenticator;
 
 namespace CAAMarketing.Areas.Identity.Pages.Account
 {
@@ -69,6 +70,7 @@ namespace CAAMarketing.Areas.Identity.Pages.Account
         /// </summary>
         public class InputModel
         {
+
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
@@ -123,7 +125,7 @@ namespace CAAMarketing.Areas.Identity.Pages.Account
             {
                 // This doesn't count login failures towards account lockout
                 // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-                var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+                var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, false, lockoutOnFailure: false);
                 if (result.Succeeded)
                 {
                     var emp = _context.Employees.Where(e => e.Email == Input.Email).FirstOrDefault();
@@ -170,5 +172,6 @@ namespace CAAMarketing.Areas.Identity.Pages.Account
             // If we got this far, something failed, redisplay form
             return Page();
         }
+
     }
 }

@@ -5,10 +5,23 @@
     CAAMarketing.Models.Item item = (CAAMarketing.Models.Item)ViewBag.Item;
 }
 
+
 <div class="detext-orderitem">
-    @*Note: Instead of figure, you can also use Cards for this layout
-    https://getbootstrap.com/docs/5.0/components/card/#horizontal*@
-    <figcaption class="col mt-3 deth1top"><h1><text class="d-none d-sm-inline"></text>@item.Name</h1></figcaption>  
+    <center>
+       @* <div class="tooltip" style="float:left;"> <a asp-action="Index"> <img src="~/images/icons8-go-back-24.png" alt="Back Icon" /> <span class="tooltiptext">Back</span></a> </div>*@
+        @*Note: Instead of figure, you can also use Cards for this layout
+        https://getbootstrap.com/docs/5.0/components/card/#horizontal*@
+        <figcaption class="col mt-3 deth1top"><h1><text class="d-none d-sm-inline"></text>@item.Name</h1></figcaption>
+    </center>
+
+    <style>
+        h1, .tooltip {
+            display: inline-block;
+            margin-left:-20px;
+            vertical-align: middle;
+        }
+    </style>
+
     <div class="row" style="margin:50px 0">
         <div class="col-3">
             @{
@@ -26,7 +39,12 @@
                         <img src="~/images/image-not-found .png" class="img-fluid rounded" />
                     </div>
                 }
+                <div id="barcode-container" style="display: none;">
+                    @Html.Raw(ViewBag.BarcodeImage)
+                    <button class="print-button" id="print-btn" onclick="printBarcode()">Print Barcode</button>
+                </div>
             }
+
         </div>
         <div class="col-4 dettop">
             <dl class="row">
@@ -42,7 +60,7 @@
                 <dd class="col-sm-7">
                     @Html.DisplayFor(model => item.Description)
                 </dd>
-            
+
                 <dt class="col-sm-5">
                     @Html.DisplayNameFor(model => item.Category):
                 </dt>
@@ -55,11 +73,12 @@
                 <dd class="col-sm-7">
                     @Html.DisplayFor(model => item.UPC)
                 </dd>
+
                 <dt class="col-sm-5">
-                        @Html.DisplayNameFor(model => item.Cost):
+                    @Html.DisplayNameFor(model => item.Cost):
                 </dt>
                 <dd class="col-sm-7">
-                        @Html.DisplayFor(model => item.Cost)
+                    @Html.DisplayFor(model => item.Cost)
                 </dd>
 
                 <dt class="col-sm-5">
@@ -76,19 +95,18 @@
                         }
                         else
                         {
-                            
 
-                            @foreach(var c in item.Inventories)
+
+                            @foreach (var c in item.Inventories)
                             {
-                             TotalStock += c.Quantity;
+                                TotalStock += c.Quantity;
                             }
-                             @TotalStock
+                            @TotalStock
                         }
 
                     }
-                    
-                </dd>
 
+                </dd>
 
             </dl>
         </div>
@@ -138,7 +156,7 @@
                     Item Low Threshold:
                 </dt>
                 <dd class="col-sm-7">
-                
+
                     <a asp-action="Edit" title="Click this to edit" asp-controller="Categories" asp-route-id="@item.CategoryID" class="padding-for-actions div-back">@Html.DisplayFor(model => item.Category.LowCategoryThreshold) </a>
                 </dd>
                 <dt class="col-sm-5">
@@ -149,314 +167,376 @@
                 </dd>
 
             </dl>
+
         </div>
         <div class="detlin">
-            <a href="@Url.Action("Create", "InventoryTransfers", new { itemId = @item.ID })" title="Click this to transfer the item" class="btn-transfer">Transfer</a>
+            @*for full audit*@
+            <div>
+                <dl class="row">
+                    <dt class="col-md-5">
+                        <a id="audithistory" href="">
+                            Audit History
+                        </a>
+                    </dt>
+                    <dd class="col-md-10">
+                        <div id="AuditForm">
+                        </div>
+                    </dd>
+                </dl>
+            </div>
 
+            <a href="@Url.Action("Create", "InventoryTransfers", new { itemId = @item.ID })" title="Click this to transfer the item" class="btn-transfer">Transfer</a>
+            <a id="toggle-barcode" class="btn-transfer">
+                Show Barcode
+            </a>
+            <a href="@Url.Action("AddItemReservation", "OrderItems", new { itemId = @item.ID })" title="Click this to book the item" class="btn-transfer">Book Item</a>
             <div class="detbut">
                 <a asp-action="Edit" title="Click this to edit" asp-controller="Items" asp-route-id="@item.ID" class=" link-action">Edit </a> |
                 <a href='@ViewData["returnURL"]' title="Click this to go to the Inventory List" class="link-action">Back to Inventory List</a>
             </div>
-
+            <br />
+            <br />
+           
         </div>
     </div>
 </div>
 
+@*for full audit*@
+@section Scripts {
+    <script type="text/javascript">
+        //$(document).on("click", "#audithistory", function () {
+        //    event.preventDefault();
+        //    $('#AuditForm').load('/Items/ItemAuditHistory/' + @item.ID);
+        //});
 
+        var isAuditFormVisible = false;
+
+        $(document).on("click", "#audithistory", function (event) {
+            event.preventDefault();
+            if (isAuditFormVisible) {
+                $('#AuditForm').empty();
+                isAuditFormVisible = false;
+            } else {
+                $('#AuditForm').load('/Items/ItemAuditHistory/' + @item.ID, function () {
+                    isAuditFormVisible = true;
+                });
+            }
+        });
+
+        $(document).on("click", function (event) {
+            if (!$(event.target).closest('#AuditForm').length && !$(event.target).is('#audithistory')) {
+                $('#AuditForm').empty();
+                isAuditFormVisible = false;
+            }
+        });
+    </script>
+}
 
 
 <br />
 <button id="show-tables-btn" class="btn-show-info" style="display: block; margin: 0 auto;" title="Click to show/hide information">
-    Show more information <i class="fas fa-chevron-down"></i>
+    Show more information <i class="fa fa-chevron-down"></i>
 </button>
 
-<div id="tables-container" style="height: 0;">
-<fieldset style="border: 2px solid #D3D3D3; padding: 5px; margin-top:10px">                                                                  @*FOR THE LOCATIONS VIEW*@
-    <div class="form-horizontal">
+<div id="more-info-container" style="display: none;">
+
+
+
+    <div class="container">
+        <fieldset style="border: 2px solid #D3D3D3; padding: 5px; margin-top:10px">
+        @*FOR THE LOCATIONS VIEW*@
         <div class="form-horizontal">
-            <div>
+                    <div class="container-fluid">
+                        <div class="table-responsive">
+                            <div class="table-wrapper" ">
+                                    <div class="table-title d-flex justify-content-between align-items-center">
+                                        <h2>Locations</h2>
+                                    </div>
+                                    <table class="table table-hover">
+                                        <colgroup>
+                                            <col span="1" />
+                                            <col span="1" />
+                                            <col span="1" />
+                                        </colgroup>
+                                        <tr>
+                                            <th>
+                                                <input type="submit" name="actionButton" value="Location" class="btn btn-link" />
+                                            </th>
+                                            <th>
+                                                <input type="submit" name="actionButton" value="Address" class="btn btn-link" />
+                                            </th>
+                                            <th>
+                                                <input type="submit" name="actionButton" value="Phone Number" class="btn btn-link" />
+                                                @* @Html.DisplayNameFor(model => model.Cost)*@
+                                            </th>
+                                            <th>
+                                                <input type="submit" name="actionButton" value="Quantity" class="btn btn-link" />
+                                                @* @Html.DisplayNameFor(model => model.Cost)*@
+                                            </th>
 
-                <div class="container-fluid">
-                    <div class="table-responsive">
-                        <div class="table-wrapper">
-                            <div class="table-title d-flex justify-content-between align-items-center">
-                                <h2>Locations</h2>
-                                </div>
+                                        </tr>
+
+                                        @foreach (var itemlocations in item.Inventories)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    @Html.DisplayFor(modelItem => itemlocations.Location.Name)
+                                                </td>
+                                                <td>
+                                                    @Html.DisplayFor(modelItem => itemlocations.Location.Address)
+                                                </td>
+                                                <td>
+                                                    @Html.DisplayFor(modelItem => itemlocations.Location.Phone)
+                                                </td>
+                                                <td>
+                                                    @Html.DisplayFor(modelItem => itemlocations.Quantity)
+                                                </td>
+
+                                            </tr>
+                                        }
+                                        <tr>
+                                            <td></td>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                    </table>
                             </div>
-                            <table class="table table-hover">
-                                <colgroup>
-                                    <col span="1" />
-                                    <col span="1" />
-                                    <col span="1" />
-                                </colgroup>
-                                <tr>
-                                    <th>
-                                        <input type="submit" name="actionButton" value="Location" class="btn btn-link" />
-                                    </th>
-                                    <th>
-                                        <input type="submit" name="actionButton" value="Address" class="btn btn-link" />
-                                    </th>
-                                    <th>
-                                        <input type="submit" name="actionButton" value="Phone Number" class="btn btn-link" />
-                                        @* @Html.DisplayNameFor(model => model.Cost)*@
-                                    </th>
-                                    <th>
-                                        <input type="submit" name="actionButton" value="Quantity" class="btn btn-link" />
-                                        @* @Html.DisplayNameFor(model => model.Cost)*@
-                                    </th>
-                                    <th>
-@*                                        <a asp-controller="OrderItems" asp-action="Add" asp-route-ItemID="@item.ID"
-                                           asp-route-ItemName="@item.Name">
-                                            <span class="btn btn-success" data-bs-toggle="tooltip"
-                                                  title="Add a receive"><strong>&#x271A; Add</strong></span>
-                                        </a>*@
-                                    </th>
-                                </tr>
-
-                                @foreach (var itemlocations in item.Inventories)
-                                {
-                                    <tr>
-                                        <td>
-                                            @Html.DisplayFor(modelItem => itemlocations.Location.Name)
-                                        </td>
-                                        <td>
-                                        @Html.DisplayFor(modelItem => itemlocations.Location.Address)
-                                        </td>
-                                        <td>
-                                        @Html.DisplayFor(modelItem => itemlocations.Location.Phone)
-                                        </td>
-                                        <td>
-                                        @Html.DisplayFor(modelItem => itemlocations.Quantity)
-                                        </td>
-                                        <td>
-                                    <a asp-controller="OrderItems" asp-action="EditItemLocations" asp-route-id="@itemlocations.Id">
-                                                <span class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Edit Location Quantity">&#x270D;</span>
-                                            </a>
-                                    <a asp-controller="OrderItems" asp-action="RemoveLocationInv" asp-route-id="@itemlocations.Id">
-                                                <span class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Delete a Location">&#x274C;</span>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                }
-                                <tr>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                </tr>
-                            </table>
                         </div>
                     </div>
-                </div>
-            </div>
         </div>
-        <partial name="_PagingNavBar" />
 
-</fieldset>
+    </fieldset>
 
-@*<div style="margin-top:3px"></div>*@
-                                                                    @*FOR THE ORDER RECIEVING TABLE*@
+                @*FOR THE ORDER RECIEVING TABLE*@
 
-<fieldset style="border: 2px solid #D3D3D3; padding: 5px;">
-    <form asp-action="Index" method="get">
-    <input type="hidden" name="sortDirection" value="@ViewData["sortDirection"]" />
-    <input type="hidden" name="sortField" value="@ViewData["sortField"]" />
-    <input type="hidden" name="ItemID" value="@item.ID" />
-    <div class="form-horizontal">
-        <div class="form-horizontal">
-            <div>
+            <fieldset style="border: 2px solid #D3D3D3; padding: 5px; margin-top:10px">
+                <form asp-action="Index" method="get">
+                    <input type="hidden" name="sortDirection" value="@ViewData["sortDirection"]" />
+                    <input type="hidden" name="sortField" value="@ViewData["sortField"]" />
+                    <input type="hidden" name="ItemID" value="@item.ID" />
+                    <div class="form-horizontal">
+                        <div class="form-horizontal">
+                            <div>
 
-                <div class="container-fluid">
-                    <div class="table-responsive">
-                        <div class="table-wrapper">
-                            <div class="table-title d-flex justify-content-between align-items-center">
-                                <h2>Receive item</h2>
-                                <div class="col-xs-7">
-                                    @*<a asp-action="Create" title="Click this to create new receive" class="btn btn-primary">
-                                    <i class="material-icons">&#xE147;</i>
-                                    <span>Create a Receive</span>*@
-                                    </a>
-                                </div>
-                            </div>
-                            <table class="table table-hover">
-                                <colgroup>
-                                    <col span="1" />
-                                    <col span="1" />
-                                    <col span="1" />
-                                    <col span="1" width="400" />
-                                    <col span="1" />
-                                </colgroup>
-                                <tr>
-                                    <th>
-                                        <input type="submit" name="actionButton" value="UPC" class="btn btn-link" />
-                                    </th>
-                                    <th>
-                                        <input type="submit" name="actionButton" value="Quantity" class="btn btn-link" />
-                                    </th>
-                                    <th>
-                                        <input type="submit" name="actionButton" value="Cost" class="btn btn-link" />
-                                        @* @Html.DisplayNameFor(model => model.Cost)*@
-                                    </th>
-                                    <th>
-                                        <input type="submit" name="actionButton" value="DateMade" class="btn btn-link" />
-                                    </th>
-                                    <th>
-                                        <input type="submit" name="actionButton" value="DeliveryDate" class="btn btn-link" />
-                                    </th>
-                                    <th>
-                                        <input type="submit" name="actionButton" value="Location" class="btn btn-link" />
-                                    </th>
-                                    <th>
-                                        Received
-                                    </th>
-
-                                    <th>
-                                        <a asp-controller="OrderItems" asp-action="Add" asp-route-ItemID="@item.ID"
-                                           asp-route-ItemName="@item.Name">
-                                            <span class="btn btn-success" data-bs-toggle="tooltip"
-                                                  title="Add a receive"><strong>&#x271A; Add</strong></span>
-                                        </a>
-                                    </th>
-                                </tr>
-
-                                @foreach (var order in Model)
-                                {
-                                    <tr>
-                                        <td>
-                                            @Html.DisplayFor(modelItem => order.Item.UPC)
-                                        </td>
-                                        <td>
-                                            @Html.DisplayFor(modelItem => order.Quantity)
-                                        </td>
-                                        <td>
-                                            @Html.DisplayFor(modelItem => order.Cost)
-                                        </td>
-                                        <td>
-                                            @Html.DisplayFor(modelItem => order.DateMade)
-                                        </td>
-
-                                        <td>
-                                            @Html.DisplayFor(modelItem => order.DeliveryDate)
-                                        </td>
-                                        <td>
-                                            @Html.DisplayFor(modelItem => order.Location.Name)
-                                        </td>
-                                        <td>
-                                            @{
-                                                DateTime deliveryDate = Convert.ToDateTime(order.DeliveryDate);
-                                                TimeSpan timeRemaining = deliveryDate - DateTime.Now;
-
-                                                int totalDaysRemaining = (int)timeRemaining.TotalDays;
-                                                int totalWeeksRemaining = (int)timeRemaining.TotalDays / 7;
-                                                int totalMonthsRemaining = (int)timeRemaining.TotalDays / 30;
-                                                int totalYearsRemaining = (int)timeRemaining.TotalDays / 365;
-                                                int totalHoursRemaining = (int)timeRemaining.TotalHours;
-                                                int totalMinutesRemaining = (int)timeRemaining.TotalMinutes;
-                                                int totalSecondsRemaining = (int)timeRemaining.TotalSeconds;
-
-                                                var progress = 100 - Math.Min(Math.Max(totalDaysRemaining, 0), 100);
-
-                                                string remainingTime = string.Empty;
-
-                                                if (totalYearsRemaining > 0)
-                                                {
-                                                    remainingTime = $"{totalYearsRemaining} year{(totalYearsRemaining > 1 ? "s" : string.Empty)}";
-                                                    if (totalMonthsRemaining % 12 > 0)
-                                                    {
-                                                        remainingTime += $", {totalMonthsRemaining % 12} month{(totalMonthsRemaining % 12 > 1 ? "s" : string.Empty)}";
-                                                    }
-                                                }
-                                                else if (totalMonthsRemaining > 0)
-                                                {
-                                                    remainingTime = $"{totalMonthsRemaining} month{(totalMonthsRemaining > 1 ? "s" : string.Empty)}";
-                                                    if (totalDaysRemaining % 30 > 0)
-                                                    {
-                                                        remainingTime += $", {totalDaysRemaining % 30} day{(totalDaysRemaining % 30 > 1 ? "s" : string.Empty)}";
-                                                    }
-                                                }
-                                                else if (totalWeeksRemaining > 0)
-                                                {
-                                                    remainingTime = $"{totalWeeksRemaining} week{(totalWeeksRemaining > 1 ? "s" : string.Empty)}";
-                                                    if (totalDaysRemaining % 7 > 0)
-                                                    {
-                                                        remainingTime += $", {totalDaysRemaining % 7} day{(totalDaysRemaining % 7 > 1 ? "s" : string.Empty)}";
-                                                    }
-                                                }
-                                                else if (totalDaysRemaining > 0)
-                                                {
-                                                    remainingTime = $"{totalDaysRemaining} day{(totalDaysRemaining > 1 ? "s" : string.Empty)}";
-                                                    if (totalHoursRemaining % 24 > 0)
-                                                    {
-                                                        remainingTime += $", {totalHoursRemaining % 24} hour{(totalHoursRemaining % 24 > 1 ? "s" : string.Empty)}";
-                                                    }
-                                                }
-                                                else if (totalHoursRemaining > 0)
-                                                {
-                                                    remainingTime = $"{totalHoursRemaining} hour{(totalHoursRemaining > 1 ? "s" : string.Empty)}";
-                                                    if (totalMinutesRemaining % 60 > 0)
-                                                    {
-                                                        remainingTime += $", {totalMinutesRemaining % 60} minute{(totalMinutesRemaining % 60 > 1 ? "s" : string.Empty)}";
-                                                    }
-                                                }
-                                                else if (totalMinutesRemaining > 0)
-                                                {
-                                                    remainingTime = $"{totalMinutesRemaining} minute{(totalMinutesRemaining > 1 ? "s" : string.Empty)}";
-                                                    if (totalSecondsRemaining % 60 > 0)
-                                                    {
-                                                        remainingTime += $", {totalSecondsRemaining % 60} second{(totalSecondsRemaining % 60 > 1 ? "s" : string.Empty)}";
-                                                    }
-                                                }
-                                            }
-
-                                            <div class="progress">
-                                                <div class="progress-bar @((deliveryDate > DateTime.Now) ? "bg-warning" : "bg-success")"
-                                                 role="progressbar"
-                                                 aria-valuenow="@progress"
-                                                 aria-valuemin="0"
-                                                 aria-valuemax="100"
-                                                 style="width: @progress%;">
-                                                    @if (deliveryDate > DateTime.Now)
-                                                    {
-                                                        @($"In Progress ({remainingTime} remaining)")
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="text-white">Received</span>
-                                                    }
+                                <div class="container-fluid">
+                                    <div class="table-responsive">
+                                        <div class="table-wrapper">
+                                            <div class="table-title d-flex justify-content-between align-items-center">
+                                                <h2>Receiving</h2>
+                                                <div class="col-xs-7">
+                                                    @*<a asp-action="Create" title="Click this to create new receive" class="btn btn-primary">
+                                                    <i class="material-icons">&#xE147;</i>
+                                                    <span>Create a Receive</span>
+                                                    </a>*@
                                                 </div>
                                             </div>
-                                        </td>
-                                        <td>
-                                            <a asp-controller="OrderItems" asp-action="Update" asp-route-id="@order.ID">
-                                                <span class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Edit a receive">&#x270D;</span>
-                                            </a>
-                                            <a asp-controller="OrderItems" asp-action="Remove" asp-route-id="@order.ID">
-                                                <span class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Delete a receive">&#x274C;</span>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                }
-                                <tr>
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                </tr>
-                            </table>
+                                            <table class="table table-hover">
+                                                <colgroup>
+                                                    <col span="1" />
+                                                    <col span="1" />
+                                                    <col span="1" />
+                                                    <col span="1" width="200" />
+                                                    <col span="1" />
+                                                </colgroup>
+                                                <tr>
+                                                    @*<th>
+                                                        <input type="submit" name="actionButton" value="UPC" class="btn btn-link" />
+                                                    </th>*@
+                                                    <th>
+                                                        <input type="submit" name="actionButton" value="Quantity" class="btn btn-link" />
+                                                    </th>
+@*                                                        <th>
+                                                        <input type="submit" name="actionButton" value="Cost" class="btn btn-link" />
+                                                            @Html.DisplayNameFor(model => model.Cost)
+                                                    </th>*@
+@*                                                        <th>
+                                                        <input type="submit" name="actionButton" value="DateMade" class="btn btn-link" />
+                                                    </th>*@
+                                                    <th>
+                                                        <input type="submit" name="actionButton" value="DeliveryDate" class="btn btn-link" />
+                                                    </th>
+                                                    <th>
+                                                        <input type="submit" name="actionButton" value="Location" class="btn btn-link" />
+                                                    </th>
+                                                    <th class="text-center">
+                                                        Received
+                                                    </th>
+                                                    @{
+                                                        if (User.IsInRole("Admin"))
+                                                        { 
+                                                        <th class="text-center">
+                                                            <a onclick="window.location.href='@Url.Action("Add", "OrderItems", new { ItemID = item.ID })'">
+                                                                <span class="btn btn-success buth" data-bs-toggle="tooltip"title="Add a receive"><strong>&#x271A; Add</strong></span>
+                                                            </a>
+                                                        </th>
+                                                        }
+                                                    }
+
+                                                </tr>
+
+                                                @foreach (var order in Model)
+                                                {
+                                                    <tr>
+                                                        @*<td>
+                                                            @Html.DisplayFor(modelItem => order.Item.UPC)
+                                                        </td>*@
+                                                        <td>
+                                                            @Html.DisplayFor(modelItem => order.Quantity)
+                                                        </td>
+@*                                                            <td>
+                                                            @Html.DisplayFor(modelItem => order.Cost)
+                                                        </td>*@
+@*                                                            <td>
+                                                            @Html.DisplayFor(modelItem => order.DateMade)
+                                                        </td>*@
+
+                                                        <td>
+                                                            @Html.DisplayFor(modelItem => order.DeliveryDate)
+                                                        </td>
+                                                        <td>
+                                                            @Html.DisplayFor(modelItem => order.Location.Name)
+                                                        </td>
+                                                        <td>
+                                                            @{
+                                                                DateTime deliveryDate = Convert.ToDateTime(order.DeliveryDate);
+                                                                TimeSpan timeRemaining = deliveryDate - DateTime.Now;
+
+                                                                int totalDaysRemaining = (int)timeRemaining.TotalDays;
+                                                                int totalWeeksRemaining = (int)timeRemaining.TotalDays / 7;
+                                                                int totalMonthsRemaining = (int)timeRemaining.TotalDays / 30;
+                                                                int totalYearsRemaining = (int)timeRemaining.TotalDays / 365;
+                                                                int totalHoursRemaining = (int)timeRemaining.TotalHours;
+                                                                int totalMinutesRemaining = (int)timeRemaining.TotalMinutes;
+                                                                int totalSecondsRemaining = (int)timeRemaining.TotalSeconds;
+
+                                                                var progress = 100 - Math.Min(Math.Max(totalDaysRemaining, 0), 100);
+
+                                                                string remainingTime = string.Empty;
+
+                                                                if (totalYearsRemaining > 0)
+                                                                {
+                                                                    remainingTime = $"{totalYearsRemaining} year{(totalYearsRemaining > 1 ? "s" : string.Empty)}";
+                                                                    if (totalMonthsRemaining % 12 > 0)
+                                                                    {
+                                                                        remainingTime += $", {totalMonthsRemaining % 12} month{(totalMonthsRemaining % 12 > 1 ? "s" : string.Empty)}";
+                                                                    }
+                                                                }
+                                                                else if (totalMonthsRemaining > 0)
+                                                                {
+                                                                    remainingTime = $"{totalMonthsRemaining} month{(totalMonthsRemaining > 1 ? "s" : string.Empty)}";
+                                                                    if (totalDaysRemaining % 30 > 0)
+                                                                    {
+                                                                        remainingTime += $", {totalDaysRemaining % 30} day{(totalDaysRemaining % 30 > 1 ? "s" : string.Empty)}";
+                                                                    }
+                                                                }
+                                                                else if (totalWeeksRemaining > 0)
+                                                                {
+                                                                    remainingTime = $"{totalWeeksRemaining} week{(totalWeeksRemaining > 1 ? "s" : string.Empty)}";
+                                                                    if (totalDaysRemaining % 7 > 0)
+                                                                    {
+                                                                        remainingTime += $", {totalDaysRemaining % 7} day{(totalDaysRemaining % 7 > 1 ? "s" : string.Empty)}";
+                                                                    }
+                                                                }
+                                                                else if (totalDaysRemaining > 0)
+                                                                {
+                                                                    remainingTime = $"{totalDaysRemaining} day{(totalDaysRemaining > 1 ? "s" : string.Empty)}";
+                                                                    if (totalHoursRemaining % 24 > 0)
+                                                                    {
+                                                                        remainingTime += $", {totalHoursRemaining % 24} hour{(totalHoursRemaining % 24 > 1 ? "s" : string.Empty)}";
+                                                                    }
+                                                                }
+                                                                else if (totalHoursRemaining > 0)
+                                                                {
+                                                                    remainingTime = $"{totalHoursRemaining} hour{(totalHoursRemaining > 1 ? "s" : string.Empty)}";
+                                                                    if (totalMinutesRemaining % 60 > 0)
+                                                                    {
+                                                                        remainingTime += $", {totalMinutesRemaining % 60} minute{(totalMinutesRemaining % 60 > 1 ? "s" : string.Empty)}";
+                                                                    }
+                                                                }
+                                                                else if (totalMinutesRemaining > 0)
+                                                                {
+                                                                    remainingTime = $"{totalMinutesRemaining} minute{(totalMinutesRemaining > 1 ? "s" : string.Empty)}";
+                                                                    if (totalSecondsRemaining % 60 > 0)
+                                                                    {
+                                                                        remainingTime += $", {totalSecondsRemaining % 60} second{(totalSecondsRemaining % 60 > 1 ? "s" : string.Empty)}";
+                                                                    }
+                                                                }
+                                                            }
+
+                                                            <div class="progress">
+                                                                <div class="progress-bar @((deliveryDate > DateTime.Now) ? "bg-warning" : "bg-success")"
+                                                                    role="progressbar"
+                                                                    aria-valuenow="@progress"
+                                                                    aria-valuemin="0"
+                                                                    aria-valuemax="100"
+                                                                    style="width: @progress%;">
+                                                                    @if (deliveryDate > DateTime.Now)
+                                                                    {
+                                                                        @($"In Progress ({remainingTime} remaining)")
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <span class="text-white">Received</span>
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                <td class="text-center">
+                                    @{
+                                        if (User.IsInRole("Admin"))
+                                        {
+                                                                <a onclick="window.location.href='@Url.Action("Details", "Receiving", new { id = @order.ID })'">
+                                                                    <span class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="View receive details">&#x1F441;</span>
+                                                                </a>
+
+                                                                <a onclick="window.location.href='@Url.Action("Update", "OrderItems", new { id = @order.ID })'">
+                                                                    <span class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Edit a receive">&#x270D;</span>
+                                                                </a>
+
+                                            if (order.DeliveryDate < DateTime.Now)
+                                            {
+                                                                    <a onclick="window.location.href='@Url.Action("Remove", "OrderItems", new { id = @order.ID })'">
+                                                                        <span class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Delete a receive">&#x274C;</span>
+                                                                    </a>
+                                            }
+                                        }
+    
+                                    }
+
+                                                        </td>
+                                                    </tr>
+                                                }
+                                                <tr>
+                                                    <td></td>
+                                                    <td></td>
+                                                    <td></td>
+                                                </tr>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <partial name="_PagingNavBar" />
-</form>
-</fieldset>    
+                </form>
+            </fieldset>
 
 
 
 
 
-@*FOR THE Item Transfers TABLE*@
 
-<fieldset style="border: 2px solid #D3D3D3; padding: 5px;">
+
+
+    @*<div style="margin-top:3px"></div>*@
+    
+
+
+
+
+
+    @*FOR THE Item Transfers TABLE*@
+
+    <fieldset style="border: 2px solid #D3D3D3; padding: 5px;">
         <div class="form-horizontal">
             <div class="form-horizontal">
                 <div>
@@ -474,18 +554,19 @@
                                         <col span="1" />
                                         <col span="1" />
                                         <col span="1" />
+                                        <col span="1" />
                                         <col span="1" width="400" />
                                         <col span="1" />
                                     </colgroup>
                                     <tr>
-                                        <th>
+@*                                        <th>
                                             <input type="submit" name="actionButton" value="Item" class="btn btn-link" />
+                                        </th>*@
+                                        <th>
+                                            <input type="submit" name="actionButton" value="From" class="btn btn-link" />
                                         </th>
                                         <th>
-                                            <input type="submit" name="actionButton" value="From Location" class="btn btn-link" />
-                                        </th>
-                                        <th>
-                                            <input type="submit" name="actionButton" value="To Location" class="btn btn-link" />
+                                            <input type="submit" name="actionButton" value="To" class="btn btn-link" />
                                         </th>
                                         <th>
                                             <input type="submit" name="actionButton" value="Quantity" class="btn btn-link" />
@@ -493,118 +574,252 @@
                                         <th>
                                             <input type="submit" name="actionButton" value="TransferDate" class="btn btn-link" />
                                         </th>
+                                        <th class="text-center">
+                                            Transfered
+                                        </th>
                                         <th>
-                                            Transfered?
+                                            Actions
                                         </th>
 
                                     </tr>
-                                @if (item.InventoryTransfers != null)
-                                {
-                                    @foreach (var itemTransfers in item.InventoryTransfers)
+                                    @if (item.InventoryTransfers != null)
                                     {
-                                        <tr>
-                                            <td>@Html.DisplayFor(modelItem => itemTransfers.Item.Name)</td>
-                                            <td>@Html.DisplayFor(modelItem => itemTransfers.FromLocation.Name)</td>
-                                            <td>@Html.DisplayFor(modelItem => itemTransfers.ToLocation.Name)</td>
-                                            <td>@Html.DisplayFor(modelItem => itemTransfers.Quantity)</td>
-                                            <td>@Html.DisplayFor(modelItem => itemTransfers.TransferDate)</td>
-                                            
-                                            <td>
-                                                @{
-                                                    DateTime deliveryDate = Convert.ToDateTime(itemTransfers.TransferDate);
-                                                    TimeSpan timeRemaining = deliveryDate - DateTime.Now;
+                                        @foreach (var itemTransfers in item.InventoryTransfers)
+                                        {
+                                            <tr>
+                                               @* <td>@Html.DisplayFor(modelItem => itemTransfers.Item.Name)</td>*@
+                                                <td>@Html.DisplayFor(modelItem => itemTransfers.FromLocation.Name)</td>
+                                                <td>@Html.DisplayFor(modelItem => itemTransfers.ToLocation.Name)</td>
+                                                <td>@Html.DisplayFor(modelItem => itemTransfers.Quantity)</td>
+                                                <td>@Html.DisplayFor(modelItem => itemTransfers.TransferDate)</td>
 
-                                                    int totalDaysRemaining = (int)timeRemaining.TotalDays;
-                                                    int totalWeeksRemaining = (int)timeRemaining.TotalDays / 7;
-                                                    int totalMonthsRemaining = (int)timeRemaining.TotalDays / 30;
-                                                    int totalYearsRemaining = (int)timeRemaining.TotalDays / 365;
-                                                    int totalHoursRemaining = (int)timeRemaining.TotalHours;
-                                                    int totalMinutesRemaining = (int)timeRemaining.TotalMinutes;
-                                                    int totalSecondsRemaining = (int)timeRemaining.TotalSeconds;
+                                                <td>
+                                                    @{
+                                                        DateTime deliveryDate = Convert.ToDateTime(itemTransfers.TransferDate);
+                                                        TimeSpan timeRemaining = deliveryDate - DateTime.Now;
 
-                                                    var progress = 100 - Math.Min(Math.Max(totalDaysRemaining, 0), 100);
+                                                        int totalDaysRemaining = (int)timeRemaining.TotalDays;
+                                                        int totalWeeksRemaining = (int)timeRemaining.TotalDays / 7;
+                                                        int totalMonthsRemaining = (int)timeRemaining.TotalDays / 30;
+                                                        int totalYearsRemaining = (int)timeRemaining.TotalDays / 365;
+                                                        int totalHoursRemaining = (int)timeRemaining.TotalHours;
+                                                        int totalMinutesRemaining = (int)timeRemaining.TotalMinutes;
+                                                        int totalSecondsRemaining = (int)timeRemaining.TotalSeconds;
 
-                                                    string remainingTime = string.Empty;
+                                                        var progress = 100 - Math.Min(Math.Max(totalDaysRemaining, 0), 100);
 
-                                                    if (totalYearsRemaining > 0)
-                                                    {
-                                                        remainingTime = $"{totalYearsRemaining} year{(totalYearsRemaining > 1 ? "s" : string.Empty)}";
-                                                        if (totalMonthsRemaining % 12 > 0)
-                                                        {
-                                                            remainingTime += $", {totalMonthsRemaining % 12} month{(totalMonthsRemaining % 12 > 1 ? "s" : string.Empty)}";
-                                                        }
-                                                    }
-                                                    else if (totalMonthsRemaining > 0)
-                                                    {
-                                                        remainingTime = $"{totalMonthsRemaining} month{(totalMonthsRemaining > 1 ? "s" : string.Empty)}";
-                                                        if (totalDaysRemaining % 30 > 0)
-                                                        {
-                                                            remainingTime += $", {totalDaysRemaining % 30} day{(totalDaysRemaining % 30 > 1 ? "s" : string.Empty)}";
-                                                        }
-                                                    }
-                                                    else if (totalWeeksRemaining > 0)
-                                                    {
-                                                        remainingTime = $"{totalWeeksRemaining} week{(totalWeeksRemaining > 1 ? "s" : string.Empty)}";
-                                                        if (totalDaysRemaining % 7 > 0)
-                                                        {
-                                                            remainingTime += $", {totalDaysRemaining % 7} day{(totalDaysRemaining % 7 > 1 ? "s" : string.Empty)}";
-                                                        }
-                                                    }
-                                                    else if (totalDaysRemaining > 0)
-                                                    {
-                                                        remainingTime = $"{totalDaysRemaining} day{(totalDaysRemaining > 1 ? "s" : string.Empty)}";
-                                                        if (totalHoursRemaining % 24 > 0)
-                                                        {
-                                                            remainingTime += $", {totalHoursRemaining % 24} hour{(totalHoursRemaining % 24 > 1 ? "s" : string.Empty)}";
-                                                        }
-                                                    }
-                                                    else if (totalHoursRemaining > 0)
-                                                    {
-                                                        remainingTime = $"{totalHoursRemaining} hour{(totalHoursRemaining > 1 ? "s" : string.Empty)}";
-                                                        if (totalMinutesRemaining % 60 > 0)
-                                                        {
-                                                            remainingTime += $", {totalMinutesRemaining % 60} minute{(totalMinutesRemaining % 60 > 1 ? "s" : string.Empty)}";
-                                                        }
-                                                    }
-                                                    else if (totalMinutesRemaining > 0)
-                                                    {
-                                                        remainingTime = $"{totalMinutesRemaining} minute{(totalMinutesRemaining > 1 ? "s" : string.Empty)}";
-                                                        if (totalSecondsRemaining % 60 > 0)
-                                                        {
-                                                            remainingTime += $", {totalSecondsRemaining % 60} second{(totalSecondsRemaining % 60 > 1 ? "s" : string.Empty)}";
-                                                        }
-                                                    }
-                                                }
+                                                        string remainingTime = string.Empty;
 
-                                                <div class="progress">
-                                                    <div class="progress-bar @((deliveryDate > DateTime.Now) ? "bg-warning" : "bg-success")"
+                                                        if (totalYearsRemaining > 0)
+                                                        {
+                                                            remainingTime = $"{totalYearsRemaining} year{(totalYearsRemaining > 1 ? "s" : string.Empty)}";
+                                                            if (totalMonthsRemaining % 12 > 0)
+                                                            {
+                                                                remainingTime += $", {totalMonthsRemaining % 12} month{(totalMonthsRemaining % 12 > 1 ? "s" : string.Empty)}";
+                                                            }
+                                                        }
+                                                        else if (totalMonthsRemaining > 0)
+                                                        {
+                                                            remainingTime = $"{totalMonthsRemaining} month{(totalMonthsRemaining > 1 ? "s" : string.Empty)}";
+                                                            if (totalDaysRemaining % 30 > 0)
+                                                            {
+                                                                remainingTime += $", {totalDaysRemaining % 30} day{(totalDaysRemaining % 30 > 1 ? "s" : string.Empty)}";
+                                                            }
+                                                        }
+                                                        else if (totalWeeksRemaining > 0)
+                                                        {
+                                                            remainingTime = $"{totalWeeksRemaining} week{(totalWeeksRemaining > 1 ? "s" : string.Empty)}";
+                                                            if (totalDaysRemaining % 7 > 0)
+                                                            {
+                                                                remainingTime += $", {totalDaysRemaining % 7} day{(totalDaysRemaining % 7 > 1 ? "s" : string.Empty)}";
+                                                            }
+                                                        }
+                                                        else if (totalDaysRemaining > 0)
+                                                        {
+                                                            remainingTime = $"{totalDaysRemaining} day{(totalDaysRemaining > 1 ? "s" : string.Empty)}";
+                                                            if (totalHoursRemaining % 24 > 0)
+                                                            {
+                                                                remainingTime += $", {totalHoursRemaining % 24} hour{(totalHoursRemaining % 24 > 1 ? "s" : string.Empty)}";
+                                                            }
+                                                        }
+                                                        else if (totalHoursRemaining > 0)
+                                                        {
+                                                            remainingTime = $"{totalHoursRemaining} hour{(totalHoursRemaining > 1 ? "s" : string.Empty)}";
+                                                            if (totalMinutesRemaining % 60 > 0)
+                                                            {
+                                                                remainingTime += $", {totalMinutesRemaining % 60} minute{(totalMinutesRemaining % 60 > 1 ? "s" : string.Empty)}";
+                                                            }
+                                                        }
+                                                        else if (totalMinutesRemaining > 0)
+                                                        {
+                                                            remainingTime = $"{totalMinutesRemaining} minute{(totalMinutesRemaining > 1 ? "s" : string.Empty)}";
+                                                            if (totalSecondsRemaining % 60 > 0)
+                                                            {
+                                                                remainingTime += $", {totalSecondsRemaining % 60} second{(totalSecondsRemaining % 60 > 1 ? "s" : string.Empty)}";
+                                                            }
+                                                        }
+                                                    }
+
+                                                    <div class="progress">
+                                                        <div class="progress-bar @((!itemTransfers.IsComfirmed) ? "bg-warning" : ((deliveryDate > DateTime.Now) ? "bg-warning" : "bg-success"))"
                                                      role="progressbar"
                                                      aria-valuenow="@progress"
                                                      aria-valuemin="0"
                                                      aria-valuemax="100"
                                                      style="width: @progress%;">
-                                                        @if (deliveryDate > DateTime.Now)
+                                                            @if (!itemTransfers.IsComfirmed)
+                                                            {
+                                                                @("Received (Not Comfirmed Yet)")
+                                                            }
+                                                            else if (deliveryDate > DateTime.Now)
+                                                            {
+                                                                @($"In Progress ({remainingTime} remaining)")
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="text-white">Received</span>
+                                                            }
+                                                        </div>
+                                                    </div>
+
+
+
+                                                </td>
+
+                                                <td>
+
+                                                    @{
+                                                        if (!itemTransfers.IsComfirmed)
                                                         {
-                                                            @($"In Progress ({remainingTime} remaining)")
+                                                            <a onclick="window.location.href='@Url.Action("ComfirmMultiple", "InventoryTransfers", new { id = @itemTransfers.TransferId })'" asp-action="ComfirmMultiple" asp-controller="InventoryTransfers" title="Click this to log back in the items" class="padding-for-actions" asp-route-id="@itemTransfers.TransferId">Comfirm Transit | </a>
+                                                        }
+                                                        <a onclick="window.location.href='@Url.Action("EditOverview", "InventoryTransfers", new { id = @itemTransfers.TransferId })'" asp-action="EditOverview" asp-controller="InventoryTransfers" title="Click this to log back in the items" class="padding-for-actions" asp-route-id="@itemTransfers.TransferId">Details</a>
+                                                        <br />
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                    
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <partial name="_PagingNavBar" />
+    </fieldset>
+
+
+
+    @*FOR THE Item Transfers TABLE*@
+
+    <fieldset style="border: 2px solid #D3D3D3; padding: 5px;">
+        <div class="form-horizontal">
+            <div class="form-horizontal">
+                <div>
+
+                    <div class="container-fluid">
+                        <div class="table-responsive">
+                            <div class="table-wrapper">
+                                <div class="table-title d-flex justify-content-between align-items-center">
+                                    <h2>Reservations Log</h2>
+                                    <div class="col-xs-7">
+                                    </div>
+                                </div>
+                                <table class="table table-hover">
+                                    <colgroup>
+                                        <col span="1" />
+                                        <col span="1" />
+                                        <col span="1" width="400" />
+                                        <col span="1" />
+                                    </colgroup>
+                                    <tr>
+                                        <th>
+                                            <input type="submit" name="actionButton" value="Event" class="btn btn-link" />
+                                        </th>
+                                        <th>
+                                            <input type="submit" name="actionButton" value="Quantity" class="btn btn-link" />
+                                        </th>
+                                        <th>
+                                            <input type="submit" name="actionButton" value="Location" class="btn btn-link" />
+                                        </th>
+                                        <th>
+                                            <input type="submit" name="actionButton" value="Reserved Date" class="btn btn-link" />
+                                        </th>
+                                        <th>
+                                            <input type="submit" name="actionButton" value="Return Date" class="btn btn-link" />
+                                        </th>
+                                        <th>
+                                            <input type="submit" name="actionButton" value="Logged" class="btn btn-link" />
+                                        </th>
+                                        <th>
+                                            <input type="button" disabled="disabled" name="actionButton" value="Actions" class="btn btn-link" />
+                                        </th>
+@*                                        <th>
+                                            <a asp-controller="OrderItems" asp-action="AddItemReservation" asp-route-ItemID="@item.ID"
+                                               asp-route-ItemName="@item.Name">
+                                                <span class="btn btn-success buth" data-bs-toggle="tooltip"
+                                                      title="Add a Reservation"><strong>&#x271A; Book Item For Event</strong></span>
+                                            </a>
+                                        </th>*@
+
+                                    </tr>
+                                    @if (item.ItemReservations != null)
+                                    {
+                                        @foreach (var reservation in item.ItemReservations)
+                                        {
+                                            <tr>
+                                                <td>@Html.DisplayFor(modelItem => reservation.Event.Name)</td>
+                                                <td>@Html.DisplayFor(modelItem => reservation.Quantity)</td>
+                                                <td>@Html.DisplayFor(modelItem => reservation.Location.Name)</td>
+                                                <td>@Html.DisplayFor(modelItem => reservation.Event.ReservedEventDate)</td>
+                                                <td>@Html.DisplayFor(modelItem => reservation.Event.ReturnEventDate)</td>
+                                                <td>
+                                                    @{
+                                                        @if (reservation.IsLoggedIn)
+                                                        {
+                                                        <span style="color: green;">&#10003;</span>
+
                                                         }
                                                         else
                                                         {
-                                                            <span class="text-white">Received</span>
+                                                        <span style="color: red;">&#10007;</span>
                                                         }
-                                                    </div>
-                                                </div>
-                                            </td>
+                                                        <br />
+                                                    }
+                                                </td>
+                                                    
+                                                
+                                                
+                                                <td>
+                                                    
+                                                    @if (!reservation.IsLoggedIn && reservation.Event.ReturnEventDate <= DateTime.Today)
+                                                    {
+                                                        <a onclick="window.location.href='@Url.Action("LogBackInMultiple", "Events", new { id = @reservation.EventId })'" asp-action="LogBackInMultiple" asp-controller="Events" title="Click this to log back in the items" class="padding-for-actions" asp-route-id="@reservation.EventId">Log-Back-in | </a>
+                                                    }
+                                                <a onclick="window.location.href='@Url.Action("EditOverview", "Events", new { id = @reservation.EventId })'" asp-action="EditOverview" asp-controller="Events" title="Click this to log back in the items" class="padding-for-actions" asp-route-id="@reservation.EventId">Details</a>
+                                                </td>
+
+                                                @*                                                
+                                                    <td>
+                                                    <a asp-controller="Events" asp-action="LogBackInMultiple" asp-route-id="@reservation.EventId"> Log Back In </a>
+                                                    </td>
+                                                *@
+
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="7">No Reservations found.</td>
                                         </tr>
                                     }
-                                }
-                                else
-                                {
+
+
                                     <tr>
-                                        <td colspan="7">No transfers found.</td>
-                                    </tr>
-                                }
-                        
-                                    <tr>
+
                                         <td></td>
                                         <td></td>
                                         <td></td>
@@ -616,191 +831,59 @@
                 </div>
             </div>
             <partial name="_PagingNavBar" />
-</fieldset>
-
-
-@*FOR THE Item Transfers TABLE*@
-
-<fieldset style="border: 2px solid #D3D3D3; padding: 5px;">
-    <div class="form-horizontal">
-        <div class="form-horizontal">
-            <div>
-
-                <div class="container-fluid">
-                    <div class="table-responsive">
-                        <div class="table-wrapper">
-                            <div class="table-title d-flex justify-content-between align-items-center">
-                                <h2>Reservations Log</h2>
-                                <div class="col-xs-7">
-                                </div>
-                            </div>
-                            <table class="table table-hover">
-                                <colgroup>
-                                    <col span="1" />
-                                    <col span="1" />
-                                    <col span="1" width="400" />
-                                    <col span="1" />
-                                </colgroup>
-                                <tr>
-                                    <th>
-                                        <input type="submit" name="actionButton" value="Event" class="btn btn-link" />
-                                    </th>
-                                    <th>
-                                        <input type="submit" name="actionButton" value="Quantity" class="btn btn-link" />
-                                    </th>
-                                    <th>
-                                        <input type="submit" name="actionButton" value="Location" class="btn btn-link" />
-                                    </th>
-                                    <th>
-                                        <input type="submit" name="actionButton" value="Reserved Date" class="btn btn-link" />
-                                    </th>
-                                    <th>
-                                        <input type="submit" name="actionButton" value="Return Date" class="btn btn-link" />
-                                    </th>
-
-                                    <th>
-                                        <a asp-controller="OrderItems" asp-action="AddItemReservation" asp-route-ItemID="@item.ID"
-                                           asp-route-ItemName="@item.Name">
-                                            <span class="btn btn-success" data-bs-toggle="tooltip"
-                                                  title="Add a Reservation"><strong>&#x271A; Book Item For Event</strong></span>
-                                        </a>
-                                    </th>
-
-                                </tr>
-                                @if (item.ItemReservations != null)
-                                {
-                                    @foreach (var reservation in item.ItemReservations)
-                                    {
-                                        <tr>
-                                            <td>@Html.DisplayFor(modelItem => reservation.Event.Name)</td>
-                                            <td>@Html.DisplayFor(modelItem => reservation.Quantity)</td>
-                                            <td>@Html.DisplayFor(modelItem => reservation.Location.Name)</td>
-                                            <td>@Html.DisplayFor(modelItem => reservation.ReservedDate)</td>
-                                            <td>@Html.DisplayFor(modelItem => reservation.ReturnDate)</td>
-                                            <td>
-                                                <a asp-controller="ItemReservations" asp-action="Delete" asp-route-id="@reservation.Id"> Log Back In </a>
-                                            </td>
-                                            
-                                        </tr>
-                                    }
-                                }
-                                else
-                                {
-                                    <tr>
-                                        <td colspan="7">No Reservations found.</td>
-                                    </tr>
-                                }
-
-
-                                <tr>
-
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <partial name="_PagingNavBar" />
-</fieldset>
+    </fieldset>
 </div>
-
-<script src="https://kit.fontawesome.com/a076d05399.js"></script>
 <script>
-    var container = document.getElementById("tables-container");
-    var button = document.getElementById("show-tables-btn");
-    var maxHeight = container.scrollHeight + "px";
-
-    container.style.height = "0";
-
-    button.addEventListener("click", function () {
-        if (container.style.height === "0px") {
-            container.style.height = maxHeight;
-            button.innerHTML = "Hide information <i class='fas fa-chevron-up rotate'></i>";
-        } else {
-            container.style.height = "0";
-            button.innerHTML = "Show more information <i class='fas fa-chevron-down'></i>";
-        }
+    $(document).ready(function () {
+        $("#toggle-barcode").on("click", function () {
+            $("#barcode-container").slideToggle("slow", function () {
+                var btnText = $("#barcode-container").is(":visible") ? "Hide Barcode" : "Show Barcode";
+                $("#toggle-barcode").text(btnText);
+            });
+        });
     });
 </script>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $("#show-tables-btn").on("click", function () {
+            $("#more-info-container").slideToggle("slow", function () {
+                var btnText = $("#more-info-container").is(":visible") ? "Hide more information" : "Show more information";
+                var iconClass = $("#more-info-container").is(":visible") ? "fa fa-chevron-up" : "fa fa-chevron-down";
+                $("#show-tables-btn").html(btnText + ' <i class="' + iconClass + '"></i>');
+            });
+        });
+    });
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+
+<script>
+    function printBarcode() {
+        var htmlContent = '<div class="barcode-container">' + document.getElementById("barcode-container").innerHTML + '</div>';
+        var printWindow = window.open('', '_blank');
+        printWindow.document.write('<html><head><title>Print Barcode</title>');
+        printWindow.document.write('<style>body {font-size: 0; margin: 0;} .barcode-container {text-align: center; width: 350px; margin: auto;} img {width: 100%;} .print-button {display: none;} @@media print { @@page { margin: 0; size: auto; } }</style>');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write(htmlContent);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        setTimeout(function () {
+            printWindow.print();
+        }, 400);
+    }
+</script>
+
+
 <style>
-
-    .btn-show-info {
-        background-color: #007bff;
-        border-color: #007bff;
-        color: white;
-        font-weight: bold;
-        padding: 10px 20px;
-        border-radius: 50px;
-        text-align: center;
-        text-decoration: none;
-        display: inline-block;
-        box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);
-        transition: all 0.5s ease-in-out;
+    .table-wrapper {
+        overflow-y: auto;
+        max-height: 400px; /* set max height here */
     }
 
-        .btn-show-info:hover {
-            background-color: #0069d9;
-            border-color: #0062cc;
-            cursor: pointer;
-        }
-
-    #tables-container {
-        overflow: hidden;
-        transition: height 0.5s ease-out;
+    a {
+        cursor: pointer;
     }
 
-    .fa-chevron-down {
-        margin-left: 5px;
-        transition: transform 0.4s ease;
-    }
-
-    .rotate {
-        transform: rotate(180deg);
-    }
-    fieldset {
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        padding: 10px;
-        margin-bottom: 10px;
-        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-    }
-
-    .btn-transfer {
-        background-color: #007bff;
-        border-color: #007bff;
-        color: white;
-        font-weight: bold;
-        padding: 10px 20px;
-        border-radius: 50px;
-        text-align: center;
-        text-decoration: none;
-        display: inline-block;
-        box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease-in-out;
-        transform: translateY(0);
-    }
-
-        .btn-transfer:hover {
-            background-color: #0069d9;
-            border-color: #0062cc;
-            cursor: pointer;
-            transform: translateY(-5px);
-        }
-
-    .link-action {
-        font-weight: bold;
-        color: #007bff;
-        text-decoration: none;
-        transition: all 0.3s ease-in-out;
-    }
-
-        .link-action:hover {
-            color: #0069d9;
-            cursor: pointer;
-        }
 </style>

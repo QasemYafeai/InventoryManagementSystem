@@ -1,0 +1,19 @@
+﻿<!-- Modal-->
+<div class="modal fade" id="addTransitComfirmationModal" tabindex="-1" role="dialog" aria-labelledby="TransitComfirmationModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="EventmyModalLabel">Confirm The Following Items Transfers</h3>
+                
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            </div>
+            <div class="modal-body">
+                @{
+                    var e = new CAAMarketing.Models.InventoryTransfer();
+                        <partial name="_TransitComfirmationCreate" model="e" />
+                }
+            </div>
+
+        </div>
+    </div>
+</div>

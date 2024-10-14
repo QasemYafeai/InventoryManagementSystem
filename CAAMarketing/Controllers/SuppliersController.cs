@@ -183,7 +183,8 @@ namespace CAAMarketing.Controllers
                     await _context.SaveChangesAsync();
                     //return RedirectToAction(nameof(Index));
                     //return RedirectToAction("Details", new { supplier.ID });
-                    return Redirect(ViewData["returnURL"].ToString());
+                    return Json(new { supplierID = supplier.ID, supplierName = supplier.Name });
+                    //return Redirect(ViewData["returnURL"].ToString());
 
                 }
             }

@@ -16,6 +16,10 @@ using CAAMarketing.ViewModels;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Cryptography.Xml;
+using ZXing.Common;
+using ZXing;
+using Newtonsoft.Json;
+using System.Diagnostics.Metrics;
 
 namespace CAAMarketing.Controllers
 {
@@ -32,8 +36,8 @@ namespace CAAMarketing.Controllers
         }
 
         // GET: Inventories
-        public async Task<IActionResult> Index(string SearchString, int?[] LocationID, bool? LowQty,
-           int? page, int? pageSizeID, string actionButton, string sortDirection = "asc", string sortField = "Item")
+        public async Task<IActionResult> Index(string SearchString1, string SearchString2, int?[] LocationID, bool? LowQty, int? MinQuantity, int? MaxQuantity,
+           int? page, int? pageSizeID, string actionButton, string sortDirection = "asc", string sortField = "Item", string scannedBarcode = "")
         {
             ViewDataReturnURL();
 
@@ -89,6 +93,8 @@ namespace CAAMarketing.Controllers
                 .Include(i => i.Employee)
                 .Include(p => p.ItemThumbNail)
                 .Include(i => i.ItemLocations).ThenInclude(i => i.Location)
+                .Include(i => i.ItemReservations)
+                .Include(i => i.InventoryTransfers)
                 .AsNoTracking();
 
             inventories = inventories.Where(p => p.Archived == false);
@@ -108,13 +114,53 @@ namespace CAAMarketing.Controllers
 
                 ViewData["Filtering"] = "btn-danger";
             }
-            if (!String.IsNullOrEmpty(SearchString))
+            if (!String.IsNullOrEmpty(SearchString1))
             {
                 long searchUPC;
-                bool isNumeric = long.TryParse(SearchString, out searchUPC);
-                inventories = inventories.Where(p => p.Name.ToUpper().Contains(SearchString.ToUpper())
-                                       || (isNumeric && p.UPC == searchUPC));
-                ViewData["Filtering"] = " btn-danger";
+                bool isNumeric = long.TryParse(SearchString1, out searchUPC);
+                inventories = inventories.Where(p => (isNumeric && p.UPC == searchUPC));
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.UPC = SearchString1;
+            }
+
+            if (!String.IsNullOrEmpty(scannedBarcode))
+            {
+                long scannedUPC;
+                bool isNumeric = long.TryParse(scannedBarcode, out scannedUPC);
+                inventories = inventories.Where(p => (isNumeric && p.UPC == scannedUPC));
+                ViewData["Filtering"] = "btn-danger";
+            }
+            if (!String.IsNullOrEmpty(SearchString2))
+            {
+                inventories = inventories.Where(p => p.Inventories.FirstOrDefault().Item.Name.ToUpper().Contains(SearchString2.ToUpper()));
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.ItemName = SearchString2;
+            }
+
+            // Filter by quantity range
+            if (MinQuantity != null && MaxQuantity != null)
+            {
+                inventories = inventories.Where(x => x.Inventories.FirstOrDefault().Quantity >= MinQuantity && x.Inventories.FirstOrDefault().Quantity <= MaxQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinQuantity = MinQuantity;
+                ViewBag.MaxQuantity = MaxQuantity;
+            }
+            else if (MinQuantity != null)
+            {
+                inventories = inventories.Where(x => x.Inventories.FirstOrDefault().Quantity >= MinQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinQuantity = MinQuantity;
+            }
+            else if (MaxQuantity != null)
+            {
+                inventories = inventories.Where(x => x.Inventories.FirstOrDefault().Quantity <= MaxQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MaxQuantity = MaxQuantity;
             }
 
 
@@ -194,6 +240,7 @@ namespace CAAMarketing.Controllers
             ViewData["sortDirection"] = sortDirection;
 
 
+
             //Handle Paging
             int pageSize = PageSizeHelper.SetPageSize(HttpContext, pageSizeID, "Inventories");
             ViewData["pageSizeID"] = PageSizeHelper.PageSizeList(pageSize);
@@ -248,12 +295,107 @@ namespace CAAMarketing.Controllers
                 .Where(c => string.IsNullOrEmpty(searchString) || c.Name.Contains(searchString))
                 .OrderBy(c => c.Name), "Id", "Name");
 
+            // Auto-generate a unique 12-digit UPC starting with 1 and the rest being random.
+            Random random = new Random();
+            long newUpc;
+            do
+            {
+                string prefix = "1";
+                string manufacturerCode = random.Next(100000, 999999).ToString();
+                string productCode = random.Next(10000, 100000).ToString();
+                string upcString = prefix + manufacturerCode + productCode;
+                int checkDigit = CalculateUPCChecksum(upcString);
+                upcString = upcString + checkDigit.ToString();
+                newUpc = long.Parse(upcString);
+            } while (_context.Items.Any(i => i.UPC == newUpc));
+
+            ViewData["GeneratedUPC"] = newUpc;
+
             return View();
         }
 
-        // POST: Items/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        private static int CalculateEAN13Checksum(string upcString)
+        {
+            int sumOdd = 0;
+            int sumEven = 0;
+
+            for (int i = 0; i < upcString.Length; i++)
+            {
+                int digit = int.Parse(upcString[i].ToString());
+
+                if (i % 2 == 0) // Even position (0-based index)
+                {
+                    sumEven += digit;
+                }
+                else // Odd position
+                {
+                    sumOdd += digit;
+                }
+            }
+
+            int totalSum = sumOdd * 3 + sumEven;
+            int mod = totalSum % 10;
+
+            return mod == 0 ? 0 : 10 - mod;
+        }
+
+        private HashSet<long> upcSet = new HashSet<long>();
+
+        private static long GenerateUniqueUPC(HashSet<long> upcSet)
+        {
+            Random random = new Random();
+            long upc;
+            do
+            {
+                string upcString = "1" + random.Next(100_000_000, 999_999_999).ToString();
+                upcString = upcString + CalculateUPCChecksum(upcString);
+                upc = long.Parse(upcString);
+            } while (upcSet.Contains(upc));
+            upcSet.Add(upc);
+            return upc;
+        }
+
+        private static long GenerateUniqueEAN13(HashSet<long> upcSet)
+        {
+            Random random = new Random();
+            long upc;
+            do
+            {
+                string upcString = "1" + random.Next(100_000_000, 999_999_999).ToString();
+                upcString = upcString + CalculateEAN13Checksum(upcString);
+                upc = long.Parse(upcString);
+            } while (upcSet.Contains(upc));
+            upcSet.Add(upc);
+            return upc;
+        }
+
+
+        private static int CalculateUPCChecksum(string upcString)
+        {
+            int sumOdd = 0;
+            int sumEven = 0;
+
+            for (int i = 0; i < upcString.Length; i++)
+            {
+                int digit = int.Parse(upcString[i].ToString());
+
+                if (i % 2 == 0) // Even position (0-based index)
+                {
+                    sumEven += digit;
+                }
+                else // Odd position
+                {
+                    sumOdd += digit;
+                }
+            }
+
+            int totalSum = sumOdd * 3 + sumEven;
+            int mod = totalSum % 10;
+
+            return mod == 0 ? 0 : 10 - mod;
+        }
+
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("ID,Name,Description,Notes,CategoryID,UPC,DateReceived,SupplierID")] Item item, IFormFile thePicture, string[] selectedOptions)
@@ -261,10 +403,8 @@ namespace CAAMarketing.Controllers
             //URL with the last filter, sort and page parameters for this controller
             ViewDataReturnURL();
 
-
             try
             {
-
                 var email = User.Identity.Name;
 
                 var employee = _context.Employees.FirstOrDefault(e => e.Email == email);
@@ -272,30 +412,21 @@ namespace CAAMarketing.Controllers
                 item.DateReceived = DateTime.Now;
 
 
-                //item.EmployeeID = 1;
+
+
                 _context.Add(item);
                 await AddPicture(item, thePicture);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAudit();
                 _context.SaveChanges();
 
-
-                
-
-                //FOR THE INVENTORY ADD
-
-                
                 ViewData["CategoryID"] = new SelectList(_context.Category, "Id", "Name", item.CategoryID);
                 ViewData["SupplierID"] = new SelectList(_context.Suppliers, "ID", "Name", item.SupplierID);
 
-
-                // Get the value of MySessionVariable from the session state
                 HttpContext.Session.SetString("GetItemIDForSkipOrder", item.ID.ToString());
-
-
             }
-            catch (DbUpdateException  dex )
+            catch (DbUpdateException dex)
             {
-                if(dex.GetBaseException().Message.Contains("UNIQUE constraint failed: Items.UPC"))
+                if (dex.GetBaseException().Message.Contains("UNIQUE constraint failed: Items.UPC"))
                 {
                     ModelState.AddModelError("UPC", "Unable to save changes. You can have duplicate UPC's");
                     _toastNotification.AddErrorToastMessage("There was an issue saving to the database, looks like you have a duplicate UPC number with another item. Please enter a different UPC");
@@ -305,7 +436,6 @@ namespace CAAMarketing.Controllers
                     ModelState.AddModelError("", "Unable to save changes after multiple attempts. Try again, and if the problem persists, see your system administrator.");
                     _toastNotification.AddErrorToastMessage("There was an issue saving to the database, Please try again later");
                 }
-                
             }
             catch (RetryLimitExceededException /* dex */)
             {
@@ -313,15 +443,9 @@ namespace CAAMarketing.Controllers
                 _toastNotification.AddErrorToastMessage("There was an issue saving to the database, Please try again later. (Database rolled back record 5+ times).");
             }
 
-            //return RedirectToAction(nameof(Index));
-            //return RedirectToAction("Details", new { item.ID });
-
-            //PopulateAssignedLocationData(item);
             return RedirectToAction("Create", "Receiving", new { id = item.ID });
-
-
-        
         }
+
 
         // GET: Items/Edit/5
         public async Task<IActionResult> Edit(int? id)
@@ -391,7 +515,7 @@ namespace CAAMarketing.Controllers
             //Put the original RowVersion value in the OriginalValues collection for the entity
             _context.Entry(itemToUpdate).Property("RowVersion").OriginalValue = RowVersion;
 
-            
+
 
 
             //Try updating it with the values posted
@@ -408,46 +532,48 @@ namespace CAAMarketing.Controllers
                     //    //inventory.Cost = itemToUpdate.Cost;
 
                     //    _context.Update(inventory);
-                    //    await _context.SaveChangesAsync();
+                    //    await _context.SaveChangesAudit();
 
                     //}
 
-                        var email = User.Identity.Name;
+                    var email = User.Identity.Name;
 
-                        var employee = _context.Employees.FirstOrDefault(e => e.Email == email);
+                    var employee = _context.Employees.FirstOrDefault(e => e.Email == email);
 
-                     if (employee != null) { itemToUpdate.EmployeeNameUser = employee.FullName; }
-                        
-
-
-                        //inventoryToUpdate.Cost = Convert.ToDecimal(InvCost);
-                        //inventoryToUpdate.Quantity = Convert.ToInt32(InvQty);
+                    if (employee != null) { itemToUpdate.EmployeeNameUser = employee.FullName; }
 
 
-                        //For the image
-                        if (removeImage != null)
-                        {
-                            //If we are just deleting the two versions of the photo, we need to make sure the Change Tracker knows
-                            //about them both so go get the Thumbnail since we did not include it.
-                            itemToUpdate.ItemThumbNail = _context.ItemThumbNails.Where(p => p.ItemID == itemToUpdate.ID).FirstOrDefault();
-                            //Then, setting them to null will cause them to be deleted from the database.
-                            itemToUpdate.ItemImages = null;
-                            itemToUpdate.ItemThumbNail = null;
-                        }
-                        else
-                        {
-                            await AddPicture(itemToUpdate, thePicture);
-                        }
 
-                        await _context.SaveChangesAsync();
+                    //inventoryToUpdate.Cost = Convert.ToDecimal(InvCost);
+                    //inventoryToUpdate.Quantity = Convert.ToInt32(InvQty);
 
-                        //_context.Add(inventoryToUpdate);
-                        //_context.SaveChanges();
-                        // return RedirectToAction(nameof(Index));
-                       return RedirectToAction("Index", "OrderItems", new { ItemID = itemToUpdate.ID });
 
-                    
-                    
+                    //For the image
+                    if (removeImage != null)
+                    {
+                        //If we are just deleting the two versions of the photo, we need to make sure the Change Tracker knows
+                        //about them both so go get the Thumbnail since we did not include it.
+                        itemToUpdate.ItemThumbNail = _context.ItemThumbNails.Where(p => p.ItemID == itemToUpdate.ID).FirstOrDefault();
+                        //Then, setting them to null will cause them to be deleted from the database.
+                        itemToUpdate.ItemImages = null;
+                        itemToUpdate.ItemThumbNail = null;
+                    }
+                    else
+                    {
+                        await AddPicture(itemToUpdate, thePicture);
+                    }
+
+                    await _context.SaveChangesAudit();
+
+                    //_context.Add(inventoryToUpdate);
+                    //_context.SaveChanges();
+                    // return RedirectToAction(nameof(Index));
+
+                    _toastNotification.AddSuccessToastMessage("Item Record Updated!");
+                    return RedirectToAction("Index", "OrderItems", new { ItemID = itemToUpdate.ID });
+
+
+
                 }
                 catch (RetryLimitExceededException /* dex */)
                 {
@@ -480,7 +606,7 @@ namespace CAAMarketing.Controllers
                 catch (Exception ex)
                 {
 
-                        ModelState.AddModelError("", ex.Message.ToString());
+                    ModelState.AddModelError("", ex.Message.ToString());
 
                 }
             }
@@ -500,9 +626,12 @@ namespace CAAMarketing.Controllers
             }
 
             var item = await _context.Items
-                .Include(i => i.Category)
+                .Include(i => i.Inventories).ThenInclude(i => i.Location)
+                .Include(i => i.ItemThumbNail)
+                .Include(i => i.ItemImages)
+                .Include(i => i.Employee)
                 .Include(i => i.Supplier)
-                .Include(i=>i.Employee)
+                .Include(i => i.Category)
                 .Include(i => i.ItemLocations).ThenInclude(i => i.Location)
                 .FirstOrDefaultAsync(m => m.ID == id);
             if (item == null)
@@ -517,7 +646,7 @@ namespace CAAMarketing.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            
+
             //URL with the last filter, sort and page parameters for this controller
             ViewDataReturnURL();
 
@@ -537,7 +666,9 @@ namespace CAAMarketing.Controllers
                 //_context.Add(archive);
                 //_context.Items.Remove(item);
                 item.Archived = true;
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAudit();
+                _toastNotification.AddSuccessToastMessage("Item record Archived. <br/> <a href='/Archives/'>View Item Archives.</a>");
+
                 // return RedirectToAction(nameof(Index));
                 //return Redirect(ViewData["returnURL"].ToString());
                 return RedirectToAction("Index", "Items");
@@ -551,6 +682,442 @@ namespace CAAMarketing.Controllers
             return View(item);
 
         }
+
+
+
+        public static string GenerateBarcodeSvg(long upc)
+        {
+            var upcString = upc.ToString();
+
+            var writer = new BarcodeWriterSvg
+            {
+                Format = BarcodeFormat.EAN_13,
+                Options = new EncodingOptions
+                {
+                    Height = 20,
+                    Width = 80,
+                    Margin = 1
+                }
+            };
+
+            var svgContent = writer.Write(upcString);
+            return svgContent.Content;
+        }
+
+
+        public IActionResult GetPrintableItems([FromQuery] List<long> upcCodes)
+        {
+            IQueryable<Item> itemsQuery = _context.Items
+                .Include(p => p.Inventories).ThenInclude(p => p.Location)
+                .Include(i => i.Category)
+                .Include(i => i.Supplier)
+                .Include(i => i.Employee)
+                .Include(p => p.ItemThumbNail)
+                .Include(i => i.ItemLocations).ThenInclude(i => i.Location);
+
+            if (upcCodes.Count > 0)
+            {
+                itemsQuery = itemsQuery.Where(i => upcCodes.Contains(i.UPC));
+            }
+
+            var items = itemsQuery
+                .Where(i => !i.Archived) // exclude archived items
+                .OrderBy(i => i.Name) // sort items by Name in ascending order
+                .Select(i => new PrintableViewModel
+                {
+                    ID = i.ID,
+                    Name = i.Name,
+                    UPC = i.UPC,
+                    Quantity = i.Inventories.Sum(inv => inv.Quantity), // Calculate the total quantity for each item
+                    BarcodeSvg = GenerateBarcodeSvg(i.UPC)
+                }).ToList();
+
+            if (upcCodes == null || upcCodes.Count == 0)
+            {
+                return View("GetPrintableItems", items);
+            }
+            else
+            {
+                return PartialView("_PrintableItems", items);
+            }
+        }
+
+
+        public IActionResult PrintableItems()
+        {
+            var partialViewResult = GetPrintableItems(null) as PartialViewResult;
+            return View("PrintableItems", partialViewResult.ViewData.Model);
+        }
+
+        [HttpGet]
+        public IActionResult GetItemIDByUPC(string upc)
+        {
+            if (string.IsNullOrWhiteSpace(upc))
+            {
+                return BadRequest("Invalid UPC.");
+            }
+
+            long upcAsLong;
+            if (!long.TryParse(upc, out upcAsLong))
+            {
+                return BadRequest("Invalid UPC.");
+            }
+
+            var item = _context.Items.FirstOrDefault(i => i.UPC == upcAsLong);
+            if (item == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(item.ID);
+        }
+
+
+
+        //for full audit
+        public async Task<PartialViewResult> ItemAuditHistory(int id)
+        {
+            const string primaryEntity = "Item";
+            //Get audit data 
+            string pkFilter = "\"ID\":" + id.ToString();
+            string fKFilter = "\"" + primaryEntity + "ID\":" + id.ToString();
+            var audits = await _context.AuditLogs
+                .Where(a => (a.EntityName == primaryEntity && a.PrimaryKey.Contains(pkFilter))
+                        || a.PrimaryKey.Contains(fKFilter)
+                        || a.ForeignKeys.Contains(fKFilter)
+                        || a.OldValues.Contains(fKFilter)
+                        || a.NewValues.Contains(fKFilter))
+                .ToListAsync();
+
+            List<AuditRecordVM> auditRecords = new List<AuditRecordVM>();
+            if (audits.Count > 0)
+            {
+                foreach (var a in audits)
+                {
+                    AuditRecordVM ar = a.ToAuditRecord();
+
+                    //Get the collection of keys
+                    Dictionary<string, string> primaryKeys = JsonConvert.DeserializeObject<Dictionary<string, string>>(a.PrimaryKey + String.Empty);
+                    //Get the collection of foreign keys
+                    Dictionary<string, string> foreignKeys = JsonConvert.DeserializeObject<Dictionary<string, string>>(a.ForeignKeys + String.Empty);
+
+                    if (ar.Type == "Updated")
+                    {
+                        //Here is where we will handle changes to any "loaded" entities related to
+                        //the primary entity that have properties to track.  You will need a "if" for each one.
+
+                        if (ar.Entity == primaryEntity)//Audit changes to the actual primary entity
+                        {
+                            ar.Type += " " + primaryEntity;
+                            //Update to the primary entity so lookup all the foreign keys 
+                            //Go and get each "lookup" Value.  Only one in this case.
+                            foreach (var value in ar.AuditValues)
+                            {
+                                if (value.PropertyName == "CategoryID")
+                                {
+                                    Category category = await _context.Categories.FindAsync(int.Parse(value.OldValue));
+                                    value.OldValue = (category != null) ? category.Name : "Deleted Category";
+                                    category = await _context.Categories.FindAsync(int.Parse(value.NewValue));
+                                    value.NewValue = (category != null) ? category.Name : "Deleted Category";
+                                    value.PropertyName = "Category";
+                                }
+                                else if (value.PropertyName == "SupplierID")
+                                {
+                                    Supplier supplier = await _context.Suppliers.FindAsync(int.Parse(value.OldValue));
+                                    value.OldValue = (supplier != null) ? supplier.Name : "Deleted Supplier";
+                                    supplier = await _context.Suppliers.FindAsync(int.Parse(value.NewValue));
+                                    value.NewValue = (supplier != null) ? supplier.Name : "Deleted Supplier";
+                                    value.PropertyName = "Supplier";
+                                }
+                                else if (value.PropertyName == "EmployeeID")
+                                {
+                                    Employee empployee = await _context.Employees.FindAsync(int.Parse(value.OldValue));
+                                    value.OldValue = (empployee != null) ? empployee.FullName : "Deleted Employee";
+                                    empployee = await _context.Employees.FindAsync(int.Parse(value.NewValue));
+                                    value.NewValue = (empployee != null) ? empployee.FullName : "Deleted Employee";
+                                    value.PropertyName = "Employee";
+                                }
+                            }
+                        }
+                        else if (ar.Entity == "InventoryTransfer")//Audit changes to the related Item Reservation
+                        {
+                            //This is a design decision.  We are going to report all changes to
+                            //a item on the reservation.
+                            //You might decide to leave that to the item reservations audit history.
+
+                            ////Go and get each "lookup" Value to add to the Type
+                            Location fromLocation = await _context.Locations.FindAsync(int.Parse(foreignKeys["FromLocationId"]));
+                            ar.Type += (fromLocation != null) ? " Location: " + fromLocation.InventoryTransfersFrom : " Deleted Location";
+                            Location toLocation = await _context.Locations.FindAsync(int.Parse(foreignKeys["ToLocationId"]));
+                            ar.Type += (toLocation != null) ? " Location: " + toLocation.InventoryTransfersTo : " Deleted Location";
+                            Transfer transfer = await _context.Transfers.FindAsync(int.Parse(foreignKeys["TransferId"]));
+                            ar.Type += (transfer != null) ? " Transfer: " + transfer.Title : " Deleted Transfer";
+                            Item item = await _context.Items.FindAsync(int.Parse(foreignKeys["ItemId"]));
+                            ar.Type += (item != null) ? " Item: " + item.Name + ")" : " Deleted Item";
+                        }
+                        else if (ar.Entity == "Inventory")//Audit changes to the related Item Reservation
+                        {
+                            //This is a design decision.  We are going to report all changes to
+                            //a item on the reservation.
+                            //You might decide to leave that to the item reservations audit history.
+
+                            ////Go and get each "lookup" Value to add to the Type
+                            Location location = await _context.Locations.FindAsync(int.Parse(foreignKeys["LocationID"]));
+                            ar.Type += (location != null) ? " Location: " + location.Name : " Deleted Location";
+                            Item item = await _context.Items.FindAsync(int.Parse(foreignKeys["ItemID"]));
+                            ar.Type += (item != null) ? " Item: " + item.Name + ")" : " Deleted Item";
+                        }
+                        else if (ar.Entity == "ItemReservation")//Audit changes to the related Item Reservation
+                        {
+                            //This is a design decision.  We are going to report all changes to
+                            //a item on the reservation.
+                            //You might decide to leave that to the item reservations audit history.
+
+                            //Go and get each "lookup" Value to add to the Type
+                            Event events = await _context.Events.FindAsync(int.Parse(foreignKeys["EventId"]));
+                            ar.Type += (events != null) ? " Event: " + events.Name : " Deleted Event";
+                            Location location = await _context.Locations.FindAsync(int.Parse(foreignKeys["LocationID"]));
+                            ar.Type += (location != null) ? " Location: " + location.Name : " Deleted Location";
+                            Item item = await _context.Items.FindAsync(int.Parse(foreignKeys["ItemId"]));
+                            ar.Type += (item != null) ? " Item: " + item.Name + ")" : " Deleted Item";
+                        }
+                        else if (ar.Entity == "MissingItemLog")//Audit changes to the related Item Reservation
+                        {
+                            //This is a design decision.  We are going to report all changes to
+                            //a item on the reservation.
+                            //You might decide to leave that to the item reservations audit history.
+
+                            ////Go and get each "lookup" Value to add to the Type
+                            Event events = await _context.Events.FindAsync(int.Parse(foreignKeys["EventId"]));
+                            ar.Type += (events != null) ? " Event: " + events.Name : " Deleted Event";
+                            Location location = await _context.Locations.FindAsync(int.Parse(foreignKeys["LocationID"]));
+                            ar.Type += (location != null) ? " Location: " + location.Name : " Deleted Location";
+                            Item item = await _context.Items.FindAsync(int.Parse(foreignKeys["ItemId"]));
+                            ar.Type += (item != null) ? " Item: " + item.Name + ")" : " Deleted Item";
+                            Employee emplyee = await _context.Employees.FindAsync(int.Parse(foreignKeys["EmployeeID"]));
+                            ar.Type += (emplyee != null) ? " Employee: " + emplyee.FullName + ")" : " Deleted Employee";
+                        }
+                        else if (ar.Entity == "MissingTransitItem")//Audit changes to the related Item Reservation
+                        {
+                            //This is a design decision.  We are going to report all changes to
+                            //a item on the reservation.
+                            //You might decide to leave that to the item reservations audit history.
+
+                            ////Go and get each "lookup" Value to add to the Type
+                            //Event events = await _context.Events.FindAsync(int.Parse(primaryKeys["EventId"]));
+                            //ar.Type += (events != null) ? " Event: " + events.Name : " Deleted Event";
+                            Location fromLocation = await _context.Locations.FindAsync(int.Parse(foreignKeys["FromLocationID"]));
+                            ar.Type += (fromLocation != null) ? " Location: " + fromLocation.InventoryTransfersFrom : " Deleted Location";
+                            Location toLocation = await _context.Locations.FindAsync(int.Parse(foreignKeys["ToLocationID"]));
+                            ar.Type += (toLocation != null) ? " Location: " + toLocation.InventoryTransfersTo : " Deleted Location";
+                            Transfer transfer = await _context.Transfers.FindAsync(int.Parse(foreignKeys["TransferID"]));
+                            ar.Type += (transfer != null) ? " Transfer: " + transfer.Title : " Deleted Transfer";
+                            Item item = await _context.Items.FindAsync(int.Parse(foreignKeys["ItemId"]));
+                            ar.Type += (item != null) ? " Item: " + item.Name + ")" : " Deleted Item";
+                        }
+                        else if (ar.Entity == "Receiving")//Audit changes to the related Item Reservation
+                        {
+                            //This is a design decision.  We are going to report all changes to
+                            //a item on the reservation.
+                            //You might decide to leave that to the item reservations audit history.
+
+                            ////Go and get each "lookup" Value to add to the Type
+                            Location location = await _context.Locations.FindAsync(int.Parse(foreignKeys["LocationID"]));
+                            ar.Type += (location != null) ? " Location: " + location.Name : " Deleted Location";
+                            Item item = await _context.Items.FindAsync(int.Parse(foreignKeys["ItemID"]));
+                            ar.Type += (item != null) ? " Item: " + item.Name + ")" : " Deleted Item";
+                        }
+                        else if (ar.Entity == "ItemLocation")//Audit changes to the related Item Reservation
+                        {
+                            //This is a design decision.  We are going to report all changes to
+                            //a item on the reservation.
+                            //You might decide to leave that to the item reservations audit history.
+
+                            ////Go and get each "lookup" Value to add to the Type
+                            Location location = await _context.Locations.FindAsync(int.Parse(foreignKeys["LocationID"]));
+                            ar.Type += (location != null) ? " Location: " + location.Name : " Deleted Location";
+                            Item item = await _context.Items.FindAsync(int.Parse(foreignKeys["ItemID"]));
+                            ar.Type += (item != null) ? " Item: " + item.Name + ")" : " Deleted Item";
+                        }
+                    }
+                    else if (ar.Type == "Added" || ar.Type == "Removed")
+                    {
+                        //In this section we will handle when entities are added or 
+                        //removed in relation to the primary entity.
+
+                        //Get the values from either Old or New
+                        //Note: adding String.Empty prevents null
+                        string values = ar.Type == "Added" ? a.NewValues + String.Empty : a.OldValues + String.Empty;
+                        //Get the collection of values of the association entity
+                        Dictionary<string, string> allValues = JsonConvert.DeserializeObject<Dictionary<string, string>>(values + String.Empty);
+
+                        //Modify the Type of audit and include some details about the related object
+                        string newComment = "";
+                        //Check to see if it is an uploaded document and show the name
+                        //if (ar.Entity == "ItemDocument")
+                        //{
+                        //    var auditValue = allValues["File Name"];
+                        //    if (!String.IsNullOrEmpty(auditValue))
+                        //    {
+                        //        newComment += " Document (" + auditValue + ")";
+                        //    }
+                        //}
+                        if (ar.Entity == "ItemImages")
+                        {
+                            newComment += " Item Photo";
+                        }
+                        else if (ar.Entity == "ItemThumbNail")
+                        {
+                            newComment += " Item Photo Thumbnail";
+                        }
+                        //Also audit Inventory Transfer.
+                        else if (ar.Entity == "InventoryTransfer")
+                        {
+                            if (int.TryParse(allValues["FromLocationId"]?.ToString(), out int fromLocationID))
+                            {
+                                Location fromLoc = await _context.Locations.FindAsync(fromLocationID);
+                                newComment += (fromLoc != null) ? " Inventory (From Location: " + fromLoc.InventoryTransfersFrom : " Item (Deleted Location";
+                            }
+                            if (int.TryParse(allValues["ToLocationId"]?.ToString(), out int toLocationID))
+                            {
+                                Location toLoc = await _context.Locations.FindAsync(toLocationID);
+                                newComment += (toLoc != null) ? " Inventory (To Location: " + toLoc.InventoryTransfersTo : " Item (Deleted Location";
+                            }
+                            if (int.TryParse(allValues["TransferId"]?.ToString(), out int transferID))
+                            {
+                                Transfer t = await _context.Transfers.FindAsync(transferID);
+                                newComment += (t != null) ? " Inventory (Transfer: " + t.Title : " Item (Deleted Transfer";
+                            }
+                            if (int.TryParse(allValues["ItemId"]?.ToString(), out int itemID))
+                            {
+                                Item i = await _context.Items.FindAsync(itemID);
+                                string itemName = i.Name;
+                                newComment += (i != null) ? ", Item: " + itemName + ")" : ", Deleted Item)";
+                            }
+                        }
+                        //Also audit Inventory.
+                        else if (ar.Entity == "Inventory")
+                        {
+                            if (int.TryParse(allValues["LocationID"]?.ToString(), out int locationID))
+                            {
+                                Location l = await _context.Locations.FindAsync(locationID);
+                                newComment += (l != null) ? " Inventory (Location: " + l.Name : " Item (Deleted Location";
+                            }
+                            if (int.TryParse(allValues["ItemID"]?.ToString(), out int itemID))
+                            {
+                                Item i = await _context.Items.FindAsync(itemID);
+                                string itemName = i.Name;
+                                newComment += (i != null) ? ", Item: " + itemName + ")" : ", Deleted Item)";
+                            }
+                        }
+                        //Also audit ItemReservations.
+                        else if (ar.Entity == "ItemReservation")
+                        {
+                            if (int.TryParse(allValues["EventId"]?.ToString(), out int eventID))
+                            {
+                                Event e = await _context.Events.FindAsync(eventID);
+                                newComment += (e != null) ? " Item (Event: " + e.Name : " Item (Deleted Event";
+                            }
+                            if (int.TryParse(allValues["ItemId"]?.ToString(), out int itemID))
+                            {
+                                Item i = await _context.Items.FindAsync(itemID);
+                                string itemName = i.Name;
+                                newComment += (i != null) ? ", Item: " + itemName + ")" : ", Deleted Item)";
+                            }
+                            if (int.TryParse(allValues["LocationID"]?.ToString(), out int locationID))
+                            {
+                                Location l = await _context.Locations.FindAsync(locationID);
+                                newComment += (l != null) ? " Item (Location: " + l.Name : " Item (Deleted Location";
+                            }
+                        }
+                        //Also audit Missing Item Logs.
+                        else if (ar.Entity == "MissingItemLog")
+                        {
+                            if (int.TryParse(allValues["EventId"]?.ToString(), out int eventID))
+                            {
+                                Event e = await _context.Events.FindAsync(eventID);
+                                newComment += (e != null) ? " Item (Event: " + e.Name : " Item (Deleted Event";
+                            }
+                            if (int.TryParse(allValues["ItemId"]?.ToString(), out int itemID))
+                            {
+                                Item i = await _context.Items.FindAsync(itemID);
+                                string itemName = i.Name;
+                                newComment += (i != null) ? ", Item: " + itemName + ")" : ", Deleted Item)";
+                            }
+                            if (int.TryParse(allValues["LocationID"]?.ToString(), out int locationID))
+                            {
+                                Location l = await _context.Locations.FindAsync(locationID);
+                                newComment += (l != null) ? " Item (Location: " + l.Name : " Item (Deleted Location";
+                            }
+                            if (int.TryParse(allValues["EmployeeID"]?.ToString(), out int employeeID))
+                            {
+                                Employee e = await _context.Employees.FindAsync(employeeID);
+                                newComment += (e != null) ? " Item (Employee: " + e.FullName : " Item (Deleted Employee";
+                            }
+                        }
+                        //Also audit Missing Transit Items.
+                        else if (ar.Entity == "MissingTransitItem")
+                        {
+                            if (int.TryParse(allValues["FromLocationID"]?.ToString(), out int fromLocationID))
+                            {
+                                Location fromLoc = await _context.Locations.FindAsync(fromLocationID);
+                                newComment += (fromLoc != null) ? " Inventory (From Location: " + fromLoc.InventoryTransfersFrom : " Item (Deleted Location";
+                            }
+                            if (int.TryParse(allValues["ToLocationID"]?.ToString(), out int toLocationID))
+                            {
+                                Location toLoc = await _context.Locations.FindAsync(toLocationID);
+                                newComment += (toLoc != null) ? " Inventory (To Location: " + toLoc.InventoryTransfersTo : " Item (Deleted Location";
+                            }
+                            if (int.TryParse(allValues["EmployeeID"]?.ToString(), out int employeeID))
+                            {
+                                Employee e = await _context.Employees.FindAsync(employeeID);
+                                newComment += (e != null) ? " Item (Employee: " + e.FullName : " Item (Deleted Employee";
+                            }
+                            if (int.TryParse(allValues["ItemID"]?.ToString(), out int itemID))
+                            {
+                                Item i = await _context.Items.FindAsync(itemID);
+                                string itemName = i.Name;
+                                newComment += (i != null) ? ", Item: " + itemName + ")" : ", Deleted Item)";
+                            }
+                        }
+                        //Also audit Orders/Receiving.
+                        else if (ar.Entity == "Receiving")
+                        {
+                            if (int.TryParse(allValues["LocationID"]?.ToString(), out int locationID))
+                            {
+                                Location l = await _context.Locations.FindAsync(locationID);
+                                newComment += (l != null) ? " Inventory (Location: " + l.Name : " Item (Deleted Location";
+                            }
+                            if (int.TryParse(allValues["ItemID"]?.ToString(), out int itemID))
+                            {
+                                Item i = await _context.Items.FindAsync(itemID);
+                                string itemName = i.Name;
+                                newComment += (i != null) ? ", Item: " + itemName + ")" : ", Deleted Item)";
+                            }
+                        }
+                        //Also audit Item Locations.
+                        else if (ar.Entity == "ItemLocation")
+                        {
+                            if (int.TryParse(allValues["LocationID"]?.ToString(), out int locationID))
+                            {
+                                Location l = await _context.Locations.FindAsync(locationID);
+                                newComment += (l != null) ? " Inventory (Location: " + l.Name : " Item (Deleted Location";
+                            }
+                            if (int.TryParse(allValues["ItemID"]?.ToString(), out int itemID))
+                            {
+                                Item i = await _context.Items.FindAsync(itemID);
+                                string itemName = i.Name;
+                                newComment += (i != null) ? ", Item: " + itemName + ")" : ", Deleted Item)";
+                            }
+                        }
+                        ar.Type += " " + newComment;
+                    }
+                    auditRecords.Add(ar);
+                }
+            }
+            return PartialView("_AuditHistory", auditRecords.OrderByDescending(a => a.DateTime));
+        }
+
 
         //For Adding Supplier
         [HttpGet]
@@ -576,7 +1143,7 @@ namespace CAAMarketing.Controllers
         {
             return new SelectList(_context
                 .Categories
-                .OrderBy(c=>c.Name), "Id", "Name", selectedId);
+                .OrderBy(c => c.Name), "Id", "Name", selectedId);
         }
 
 
@@ -699,7 +1266,7 @@ namespace CAAMarketing.Controllers
 
         private void CreatingInventoryLocations(string[] selectedOptions, Inventory invToCreate, int ItemID)
         {
-            
+
 
         }
 

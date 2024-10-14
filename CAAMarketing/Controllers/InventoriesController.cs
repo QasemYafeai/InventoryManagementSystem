@@ -23,6 +23,8 @@ using AspNetCore;
 using Microsoft.AspNetCore.Http;
 using OfficeOpenXml.FormulaParsing.Excel.Functions.DateTime;
 using Microsoft.AspNetCore.Authorization;
+using System.Web.Helpers;
+using Newtonsoft.Json;
 
 namespace CAAMarketing.Controllers
 {
@@ -32,6 +34,7 @@ namespace CAAMarketing.Controllers
         private readonly CAAContext _context;
         private readonly IToastNotification _toastNotification;
         private readonly INotyfService _itoastNotify;
+        private IQueryable<InventoryReportVM> _filteredList;
 
         public InventoriesController(CAAContext context, IToastNotification toastNotification, INotyfService itoastNotify)
         {
@@ -55,7 +58,7 @@ namespace CAAMarketing.Controllers
             // FOR THE ACTIVEMESSAGE BUTTON SHOWING HOW MANY NOTIF ARE INSIDE
             var invForActive = _context.Inventories.Include(i => i.Location).Include(i => i.Item).ThenInclude(i => i.Category)
                 .Where(i => i.DismissNotification <= DateTime.Now && i.Quantity < i.Item.Category.LowCategoryThreshold && i.Item.Archived != true && i.DismissNotification != null).Count();
-            
+
             ViewData["ActiveMessageCount"] = (invForActive).ToString();
             //--------------------------------------------------------------------
 
@@ -96,7 +99,7 @@ namespace CAAMarketing.Controllers
                 .Include(i => i.Item.Employee)
                 .Include(i => i.Location)
                 .Include(i => i.Item).ThenInclude(i => i.Category)
-                .Include(i=>i.Item.ItemLocations).ThenInclude(i=>i.Location)
+                .Include(i => i.Item.ItemLocations).ThenInclude(i => i.Location)
             .AsNoTracking();
 
 
@@ -282,9 +285,9 @@ namespace CAAMarketing.Controllers
         public async Task<IActionResult> Create(string selectedValue, string selectedItemId, string selectedItemId1, string TypeOfOperation)
         {
             string typeofoperation = HttpContext.Session.GetString("NotifOperation");
-            
 
-            
+
+
 
             if (TypeOfOperation == "Activate")
             {
@@ -309,7 +312,7 @@ namespace CAAMarketing.Controllers
                 }
                 TempData["NotifFromPopupSuccess"] = "Activate";
             }
-               
+
 
 
             else if (TypeOfOperation == "Silent")
@@ -407,7 +410,7 @@ namespace CAAMarketing.Controllers
                 try
                 {
 
-                    await _context.SaveChangesAsync();
+                    await _context.SaveChangesAudit();
                     return RedirectToAction(nameof(Index));
                     //return RedirectToAction("Details", new { inventoryToUpdate.ItemID });
 
@@ -490,10 +493,37 @@ namespace CAAMarketing.Controllers
                 _context.Inventories.Remove(inventory);
             }
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAudit();
             // return RedirectToAction(nameof(Index));
             return Redirect(ViewData["returnURL"].ToString());
 
+        }
+
+        public JsonResult GetItemNames(string term)
+        {
+            var result = from d in _context.Inventories
+                         where d.Item.Name.ToUpper().Contains(term.ToUpper())
+                         orderby d.Item.Name
+                         select new { value = d.Item.Name, };
+            return Json(result);
+        }
+
+        public JsonResult GetItemUPC(string term)
+        {
+            var result = from d in _context.Inventories
+                         where d.Item.UPC.ToString().Contains(term.ToUpper())
+                         orderby d.Item.UPC
+                         select new { value = d.Item.UPC };
+            return Json(result);
+        }
+
+        public JsonResult GetItemEvent(string term)
+        {
+            var result = from d in _context.EventLogs
+                         where d.EventName.ToUpper().Contains(term.ToUpper())
+                         orderby d.EventName
+                         select new { value = d.EventName };
+            return Json(result);
         }
 
         private void CheckInventoryLevel(List<Inventory> inventories)
@@ -518,9 +548,9 @@ namespace CAAMarketing.Controllers
                                     </button>
                                     ");
                     }
-                    
-        
-    
+
+
+
                 }
                 else
                 {
@@ -542,27 +572,11 @@ namespace CAAMarketing.Controllers
         }
 
         //Method for Viewing Full Inventory Report
-        public async Task<IActionResult> InventoryReport(string SearchString, int?[] LocationID, int? SupplierID, int? CategoryID, int? page, int? pageSizeID, string actionButton,
-            string sortDirection = "asc", string sortField = "ItemName")
+        public async Task<IActionResult> InventoryReport(string SearchString1, string SearchString2, string SearchString3, int?[] LocationID, int? SupplierID, int? CategoryID, DateTime? FromDate, DateTime? ToDate,
+            decimal? MinCost, decimal? MaxCost, int? MinQuantity, int? MaxQuantity, bool filterByBaseStockLevel, bool filterByLowStockLevel, bool filterByOutOfStockLevel,
+                int? page, int? pageSizeID, string actionButton, string sortDirection = "asc", string sortField = "Items")
         {
             //For the Report View
-            //var sumQ = _context.Inventories.Include(a => a.Item).Include(p => p.Location)
-            //   .GroupBy(a => new { a.ItemID, a.Item.Name })
-            //   .Select(grp => new InventoryReportVM
-            //   {
-            //       ID = grp.Key.ItemID,
-            //       Category = grp.Select(grp => grp.Item.Category.Name).ToString(),
-            //       UPC = grp.Select(grp => grp.Item.UPC).ToString(),
-            //       ItemName = grp.Select(grp => grp.Item.Name).ToString(),
-            //       Cost = Convert.ToDecimal(grp.Select(grp => grp.Cost)),
-            //       Quantity = Convert.ToInt32(grp.Select(grp => grp.Quantity)),
-            //       Location = grp.Select(grp => grp.Location.Name).ToString(),
-            //       Supplier = grp.Select(grp => grp.Item.Supplier.Name).ToString(),
-            //       DateReceived = Convert.ToDateTime(grp.Select(grp => grp.Item.DateReceived)),
-            //       Notes = grp.Select(grp => grp.Item.Notes).ToString()
-            //   }).OrderBy(s => s.ItemName);
-
-            //For report
             var sumQ = from i in _context.Inventories
                         .Include(i => i.Item.Supplier)
                         .Include(i => i.Item.Category)
@@ -574,6 +588,7 @@ namespace CAAMarketing.Controllers
                            Category = i.Item.Category.Name,
                            CategoryID = i.Item.Category.Id,
                            UPC = i.Item.UPC,
+                           ItemID = i.Item.ID,
                            ItemName = i.Item.Name,
                            Cost = i.Cost,
                            Quantity = i.Quantity,
@@ -615,7 +630,7 @@ namespace CAAMarketing.Controllers
 
             //List of sort options.
             //NOTE: make sure this array has matching values to the column headings
-            string[] sortOptions = new[] { "Category", "UPC", "ItemName", "Cost", "Quantity", "Location", "Supplier", "DateReveived" };
+            string[] sortOptions = new[] { "Category", "UPC", "Items", "Cost", "Quantity", "Location", "Supplier", "DateReveived" };
 
             //Add as many filters as needed
             if (LocationID.Length > 0)
@@ -633,13 +648,410 @@ namespace CAAMarketing.Controllers
                 sumQ = sumQ.Where(p => p.CategoryID == CategoryID);
                 ViewData["Filtering"] = "btn-danger";
             }
-            if (!String.IsNullOrEmpty(SearchString))
+            if (!String.IsNullOrEmpty(SearchString1))
             {
                 long searchUPC;
-                bool isNumeric = long.TryParse(SearchString, out searchUPC);
-                sumQ = sumQ.Where(p => p.ItemName.ToUpper().Contains(SearchString.ToUpper())
-                                        || (isNumeric && p.UPC == searchUPC));
+                bool isNumeric = long.TryParse(SearchString1, out searchUPC);
+                sumQ = sumQ.Where(p => (isNumeric && p.UPC == searchUPC));
                 ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.UPC = SearchString1;
+            }
+            if (!String.IsNullOrEmpty(SearchString2))
+            {
+                sumQ = sumQ.Where(p => p.ItemName.ToUpper().Contains(SearchString2.ToUpper()));
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.ItemName = SearchString2;
+            }
+            if (!String.IsNullOrEmpty(SearchString3))
+            {
+                sumQ = sumQ.Where(p => p.ItemName.ToUpper().Contains(SearchString3.ToUpper()));
+                ViewData["Filtering"] = "btn-danger";
+            }
+            if (FromDate != null || ToDate != null)
+            {
+                if (FromDate != null && ToDate != null)
+                {
+                    // Filter records where DateReceived is within the specified range
+                    sumQ = sumQ.Where(x => x.DateReceived >= FromDate && x.DateReceived <= ToDate);
+                    ViewData["Filtering"] = "btn-danger";
+                }
+                else
+                {
+                    // Filter records where DateReceived is greater than or equal to FromDate or less than or equal to ToDate
+                    sumQ = sumQ.Where(x => x.DateReceived >= FromDate || x.DateReceived <= ToDate);
+                    ViewData["Filtering"] = "btn-danger";
+                }
+                // Pass the values back to the view
+                ViewBag.FromDate = FromDate;
+                ViewBag.ToDate = ToDate;
+            }
+
+            // Filter by cost range
+            if (MinCost != null && MaxCost != null)
+            {
+                sumQ = sumQ.Where(x => x.Cost >= MinCost && x.Cost <= MaxCost);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinCost = MinCost;
+                ViewBag.MaxCost = MaxCost;
+            }
+            else if (MinCost != null)
+            {
+                sumQ = sumQ.Where(x => x.Cost >= MinCost);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinCost = MinCost;
+            }
+            else if (MaxCost != null)
+            {
+                sumQ = sumQ.Where(x => x.Cost <= MaxCost);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MaxCost = MaxCost;
+            }
+
+            // Filter by quantity range
+            if (MinQuantity != null && MaxQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity >= MinQuantity && x.Quantity <= MaxQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinQuantity = MinQuantity;
+                ViewBag.MaxQuantity = MaxQuantity;
+            }
+            else if (MinQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity >= MinQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinQuantity = MinQuantity;
+            }
+            else if (MaxQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity <= MaxQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MaxQuantity = MaxQuantity;
+            }
+            //filter locations based on stock levels if needed
+            if (filterByBaseStockLevel || filterByLowStockLevel || filterByOutOfStockLevel)
+            {
+                sumQ = sumQ.Where(l => l.Inventories.Any(i =>
+                    (filterByBaseStockLevel && i.Quantity < i.BaseStockLevel) ||
+                    (filterByLowStockLevel && i.Quantity < i.LowInventoryThreshold) ||
+                    (filterByOutOfStockLevel && i.Quantity == 0)
+                ));
+
+                ViewData["Filtering"] = "btn-danger";
+                ViewBag.FilterByBaseStockLevel = new { IsChecked = filterByBaseStockLevel };
+                ViewBag.FilterByLowStockLevel = new { IsChecked = filterByLowStockLevel };
+                ViewBag.FilterByOutOfStockLevel = new { IsChecked = filterByOutOfStockLevel };
+            }
+
+
+            //Before we sort, see if we have called for a change of filtering or sorting
+            if (!String.IsNullOrEmpty(actionButton)) //Form Submitted!
+            {
+                if (sortOptions.Contains(actionButton))//Change of sort is requested
+                {
+                    if (actionButton == sortField) //Reverse order on same field
+                    {
+                        sortDirection = sortDirection == "asc" ? "desc" : "asc";
+                    }
+                    sortField = actionButton;//Sort by the button clicked
+                }
+            }
+
+            //Now we know which field and direction to sort by
+            if (sortField == "Category")
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(i => i.Category);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(i => i.Category);
+                }
+            }
+            else if (sortField == "UPC")
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.UPC);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.UPC);
+                }
+            }
+            else if (sortField == "Cost")
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.Cost.ToString());
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.Cost.ToString());
+                }
+            }
+            else if (sortField == "Quantity")
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.Quantity);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.Quantity);
+                }
+            }
+            else if (sortField == "Location")
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.Location);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.Location);
+                }
+            }
+            else if (sortField == "Supplier")
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.Supplier);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.Supplier);
+                }
+            }
+            else if (sortField == "DateReveived")
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.DateReceived);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.DateReceived);
+                }
+            }
+            else //Sorting by Item Name
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.ItemName);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.ItemName);
+                }
+            }
+            //Set sort for next time
+            ViewData["sortField"] = sortField;
+            ViewData["sortDirection"] = sortDirection;
+
+            //int pageSize = PageSizeHelper.SetPageSize(HttpContext, pageSizeID, "InventoryReport");//Remember for this View
+            //ViewData["pageSizeID"] = PageSizeHelper.PageSizeList(pageSize);
+            //var pagedData = await PaginatedList<InventoryReportVM>.CreateAsync(sumQ.AsNoTracking(), page ?? 1, pageSize);
+
+            //return View(pagedData);
+            return View(sumQ);
+        }
+
+        //Method for Excel Full Inventory Report
+        public IActionResult DownloadInventory(string SearchString1, string SearchString2, string SearchString3, int?[] LocationID, int? SupplierID, int? CategoryID, DateTime? FromDate, DateTime? ToDate,
+             decimal? MinCost, decimal? MaxCost, int? MinQuantity, int? MaxQuantity, bool filterByBaseStockLevel, bool filterByLowStockLevel, bool filterByOutOfStockLevel,
+                int? page, int? pageSizeID, string actionButton, string sortDirection = "asc", string sortField = "Items")
+        {
+            var sumQ = from i in _context.Inventories
+                        .Include(i => i.Item.Supplier)
+                        .Include(i => i.Item.Category)
+                        .Include(i => i.Item.ItemLocations).ThenInclude(i => i.Location)
+                       orderby i.Item.Name ascending
+                       select new InventoryReportVM
+                       {
+                           ID = i.ItemID,
+                           Category = i.Item.Category.Name,
+                           CategoryID = i.Item.Category.Id,
+                           UPC = i.Item.UPC,
+                           ItemID = i.Item.ID,
+                           ItemName = i.Item.Name,
+                           Cost = i.Cost,
+                           Quantity = i.Quantity,
+                           Location = i.Location.Name,
+                           LocationID = i.LocationID,
+                           Supplier = i.Item.Supplier.Name,
+                           SupplierID = i.Item.Supplier.ID,
+                           DateReceived = (DateTime)i.Item.DateReceived,
+                           Inventories = i.Item.Inventories,
+                           ItemLocations = i.Item.ItemLocations,
+                           Notes = i.Item.Notes
+                       };
+
+            ViewDataReturnURL();
+
+            //Clear the sort/filter/paging URL Cookie for Controller
+            CookieHelper.CookieSet(HttpContext, ControllerName() + "URL", "", -1);
+
+            //Toggle the Open/Closed state of the collapse depending on if we are filtering
+            ViewData["Filtering"] = ""; //Assume not filtering
+
+            //Populating the DropDownLists for the Search/Filtering criteria, which are the Location
+            ViewData["LocationID"] = new SelectList(_context.Locations, "Id", "Name");
+
+            //Populating the DropDownLists for the Search/Filtering criteria, which are the Supplier
+            ViewData["SupplierID"] = new SelectList(_context
+                .Suppliers
+                .OrderBy(s => s.Name), "ID", "Name");
+
+            //Populating the DropDownLists for the Search/Filtering criteria, which are the Category
+            ViewData["CategoryID"] = new SelectList(_context
+                .Categories
+                .OrderBy(s => s.Name), "Id", "Name");
+
+            //List of sort options.
+            //NOTE: make sure this array has matching values to the column headings
+            string[] sortOptions = new[] { "Category", "UPC", "Items", "Cost", "Quantity", "Location", "Supplier", "Date Reveived" };
+
+            //Add as many filters as needed
+            if (LocationID.Length > 0)
+            {
+                sumQ = sumQ.Where(p => LocationID.Contains(p.LocationID));
+                ViewData["Filtering"] = "btn-danger";
+            }
+            if (SupplierID.HasValue)
+            {
+                sumQ = sumQ.Where(p => p.SupplierID == SupplierID);
+                ViewData["Filtering"] = "btn-danger";
+            }
+            if (CategoryID.HasValue)
+            {
+                sumQ = sumQ.Where(p => p.CategoryID == CategoryID);
+                ViewData["Filtering"] = "btn-danger";
+            }
+            if (!String.IsNullOrEmpty(SearchString1))
+            {
+                long searchUPC;
+                bool isNumeric = long.TryParse(SearchString1, out searchUPC);
+                sumQ = sumQ.Where(p => (isNumeric && p.UPC == searchUPC));
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.UPC = SearchString1;
+            }
+            if (!String.IsNullOrEmpty(SearchString2))
+            {
+                sumQ = sumQ.Where(p => p.ItemName.ToUpper().Contains(SearchString2.ToUpper()));
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.ItemName = SearchString2;
+            }
+            if (!String.IsNullOrEmpty(SearchString3))
+            {
+                sumQ = sumQ.Where(p => p.ItemName.ToUpper().Contains(SearchString3.ToUpper()));
+                ViewData["Filtering"] = "btn-danger";
+            }
+            if (FromDate != null || ToDate != null)
+            {
+                if (FromDate != null && ToDate != null)
+                {
+                    // Filter records where DateReceived is within the specified range
+                    sumQ = sumQ.Where(x => x.DateReceived >= FromDate && x.DateReceived <= ToDate);
+                    ViewData["Filtering"] = "btn-danger";
+                }
+                else
+                {
+                    // Filter records where DateReceived is greater than or equal to FromDate or less than or equal to ToDate
+                    sumQ = sumQ.Where(x => x.DateReceived >= FromDate || x.DateReceived <= ToDate);
+                    ViewData["Filtering"] = "btn-danger";
+                }
+                // Pass the values back to the view
+                ViewBag.FromDate = FromDate;
+                ViewBag.ToDate = ToDate;
+            }
+
+            // Filter by cost range
+            if (MinCost != null && MaxCost != null)
+            {
+                sumQ = sumQ.Where(x => x.Cost >= MinCost && x.Cost <= MaxCost);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinCost = MinCost;
+                ViewBag.MaxCost = MaxCost;
+            }
+            else if (MinCost != null)
+            {
+                sumQ = sumQ.Where(x => x.Cost >= MinCost);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinCost = MinCost;
+            }
+            else if (MaxCost != null)
+            {
+                sumQ = sumQ.Where(x => x.Cost <= MaxCost);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MaxCost = MaxCost;
+            }
+
+            // Filter by quantity range
+            if (MinQuantity != null && MaxQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity >= MinQuantity && x.Quantity <= MaxQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinQuantity = MinQuantity;
+                ViewBag.MaxQuantity = MaxQuantity;
+            }
+            else if (MinQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity >= MinQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinQuantity = MinQuantity;
+            }
+            else if (MaxQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity <= MaxQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MaxQuantity = MaxQuantity;
+            }
+            //filter locations based on stock levels if needed
+            if (filterByBaseStockLevel || filterByLowStockLevel || filterByOutOfStockLevel)
+            {
+                sumQ = sumQ.Where(l => l.Inventories.Any(i =>
+                    (filterByBaseStockLevel && i.Quantity < i.BaseStockLevel) ||
+                    (filterByLowStockLevel && i.Quantity < i.LowInventoryThreshold) ||
+                    (filterByOutOfStockLevel && i.Quantity == 0)
+                ));
+
+                ViewData["Filtering"] = "btn-danger";
+                ViewBag.FilterByBaseStockLevel = new { IsChecked = filterByBaseStockLevel };
+                ViewBag.FilterByLowStockLevel = new { IsChecked = filterByLowStockLevel };
+                ViewBag.FilterByOutOfStockLevel = new { IsChecked = filterByOutOfStockLevel };
             }
 
             //Before we sort, see if we have called for a change of filtering or sorting
@@ -764,34 +1176,21 @@ namespace CAAMarketing.Controllers
             ViewData["sortField"] = sortField;
             ViewData["sortDirection"] = sortDirection;
 
-            int pageSize = PageSizeHelper.SetPageSize(HttpContext, pageSizeID, "InventoryReport");//Remember for this View
-            ViewData["pageSizeID"] = PageSizeHelper.PageSizeList(pageSize);
-            var pagedData = await PaginatedList<InventoryReportVM>.CreateAsync(sumQ.AsNoTracking(), page ?? 1, pageSize);
-
-            return View(pagedData);
-        }
-
-        //Method for Excel Full Inventory Report
-        public IActionResult DownloadInventory()
-        {
-            //Get the inventory
-            var items = from i in _context.Inventories
-                        .Include(i => i.Item.Supplier)
-                        .Include(i => i.Item.Category)
-                        .Include(i => i.Item.Employee)
-                        orderby i.Location, i.Item.Name ascending
+            var items = from i in sumQ
+                            //orderby i.Location, i.ItemName ascending
                         select new
                         {
-                            Category = i.Item.Category.Name,
-                            UPC = i.Item.UPC,
-                            Item = i.Item.Name,
+                            Category = i.Category,
+                            UPC = i.UPC,
+                            ItemName = i.ItemName,
                             Cost = i.Cost,
                             Quantity = i.Quantity,
-                            Location = i.Location.Name,
-                            Supplier = i.Item.Supplier.Name,
-                            DateRecieved = i.Item.DateReceived,
-                            Notes = i.Item.Notes
+                            Location = i.Location,
+                            Supplier = i.Supplier,
+                            DateReceived = (DateTime)i.DateReceived,
+                            Notes = i.Notes
                         };
+
             //How many rows?
             int numRows = items.Count();
 
@@ -800,28 +1199,15 @@ namespace CAAMarketing.Controllers
                 //Create a new spreadsheet from scratch.
                 using (ExcelPackage excel = new ExcelPackage())
                 {
-
-                    //Note: you can also pull a spreadsheet out of the database if you
-                    //have saved it in the normal way we do, as a Byte Array in a Model
-                    //such as the UploadedFile class.
-                    //
-                    // Suppose...
-                    //
-                    // var theSpreadsheet = _context.UploadedFiles.Include(f => f.FileContent).Where(f => f.ID == id).SingleOrDefault();
-                    //
-                    //    //Pass the Byte[] FileContent to a MemoryStream
-                    //
-                    // using (MemoryStream memStream = new MemoryStream(theSpreadsheet.FileContent.Content))
-                    // {
-                    //     ExcelPackage package = new ExcelPackage(memStream);
-                    // }
-
                     var workSheet = excel.Workbook.Worksheets.Add("Inventory");
 
                     //Note: Cells[row, column]
                     workSheet.Cells[3, 1].LoadFromCollection(items, true);
 
-                    //Style 6th column for dates (DateRecieved)
+                    //Style fee column for upc
+                    workSheet.Column(2).Style.Numberformat.Format = "##############0";
+
+                    //Style 8th column for dates (DateRecieved)
                     workSheet.Column(8).Style.Numberformat.Format = "yyyy-mm-dd";
 
                     //Style fee column for currency
@@ -837,56 +1223,31 @@ namespace CAAMarketing.Controllers
 
                     //Make Item Quantity Bold/Colour coded
                     workSheet.Cells[4, 5, numRows + 3, 5].Style.Font.Bold = true;
-                    var item = from i in _context.Inventories
-                               orderby i.Item.Name ascending
-                               select i.Quantity;
-                    int row = 4;
-                    foreach (var qty in item)
-                    {
-                        if (row <= (numRows + 3))
-                        {
-                            if (qty == 0)
-                            {
-                                workSheet.Cells[row, 5].Style.Font.Color.SetColor(Color.Red);
-                                row++;
-                            }
-                            else if ((qty <= 10) && (qty > 0))
-                            {
-                                workSheet.Cells[row, 5].Style.Font.Color.SetColor(Color.Orange);
-                                row++;
-                            }
-                            else if (qty > 10)
-                            {
-                                workSheet.Cells[row, 5].Style.Font.Color.SetColor(Color.Green);
-                                row++;
-                            }
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
 
-                    //Note: these are fine if you are only 'doing' one thing to the range of cells.
-                    //Otherwise you should USE a range object for efficiency
-                    //Total Cost for all Items in Inventory
-                    //workSheet.Cells[4, 4, numRows + 3, 5].Calculate();
-                    //total Cost
                     using (ExcelRange totalfees = workSheet.Cells[numRows + 4, 4])//
                     {
                         //Total Cost Text
                         workSheet.Cells[numRows + 4, 3].Value = "Total Cost:";
                         workSheet.Cells[numRows + 4, 3].Style.Font.Bold = true;
                         workSheet.Cells[numRows + 4, 3].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+
                         //Total Cost Sum - get cost * qty for each row
-                        totalfees.Formula = "Sum(" + (workSheet.Cells[4, 4].Address) + ":" + workSheet.Cells[numRows + 3, 4].Address + ")" + "*" + "Sum(" +
-                            (workSheet.Cells[4, 5].Address) + ":" + workSheet.Cells[numRows + 3, 5].Address + ")";
+                        decimal totalCost = 0m;
+                        for (int row = 4; row <= numRows + 3; row++)
+                        {
+                            decimal cost = (decimal)workSheet.Cells[row, 4].Value;
+                            int qty = (int)workSheet.Cells[row, 5].Value;
+                            totalCost += cost * qty;
+                        }
+
+                        totalfees.Value = totalCost;
                         totalfees.Style.Font.Bold = true;
                         totalfees.Style.Numberformat.Format = "$###,###,##0.00";
                         var range = workSheet.Cells[numRows + 4, 4, numRows + 4, 5];
                         range.Merge = true;
                         range.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
                     }
+
                     //total Quantity
                     using (ExcelRange totalQty = workSheet.Cells[numRows + 5, 4])//
                     {
@@ -898,7 +1259,7 @@ namespace CAAMarketing.Controllers
                         totalQty.Formula = "Sum(" + (workSheet.Cells[4, 5].Address) + ":" + workSheet.Cells[numRows + 3, 5].Address + ")";
                         totalQty.Style.Font.Bold = true;
                         totalQty.Style.Numberformat.Format = "###,###,##0";
-                        var range = workSheet.Cells[numRows + 4, 4, numRows + 4, 5];
+                        var range = workSheet.Cells[numRows + 5, 4, numRows + 5, 5];
                         range.Merge = true;
                         range.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
                     }
@@ -911,24 +1272,6 @@ namespace CAAMarketing.Controllers
                         fill.PatternType = ExcelFillStyle.Solid;
                         fill.BackgroundColor.SetColor(Color.LightBlue);
                     }
-
-                    ////Boy those notes are BIG!
-                    ////Lets put them in comments instead.
-                    //for (int i = 4; i < numRows + 4; i++)
-                    //{
-                    //    using (ExcelRange Rng = workSheet.Cells[i, 7])
-                    //    {
-                    //        string[] commentWords = Rng.Value.ToString().Split(' ');
-                    //        Rng.Value = commentWords[0] + "...";
-                    //        //This LINQ adds a newline every 7 words
-                    //        string comment = string.Join(Environment.NewLine, commentWords
-                    //            .Select((word, index) => new { word, index })
-                    //            .GroupBy(x => x.index / 7)
-                    //            .Select(grp => string.Join(" ", grp.Select(x => x.word))));
-                    //        ExcelComment cmd = Rng.AddComment(comment, "Apt. Notes");
-                    //        cmd.AutoFit = true;
-                    //    }
-                    //}
 
                     //Autofit columns
                     workSheet.Cells.AutoFitColumns();
@@ -977,8 +1320,8 @@ namespace CAAMarketing.Controllers
         }
 
         //Method for Viewing Inventory Levels Report
-        public async Task<IActionResult> InventoryLevelsReport(string SearchString, int?[] LocationID, int? page, int? pageSizeID, string actionButton,
-            string sortDirection = "asc", string sortField = "ItemName")
+        public async Task<IActionResult> InventoryLevelsReport(string SearchString1, string SearchString2, string SearchString3, int?[] LocationID, int? MinQuantity, int? MaxQuantity,
+             bool filterByBaseStockLevel, bool filterByLowStockLevel, bool filterByOutOfStockLevel, int? page, int? pageSizeID, string actionButton, string sortDirection = "asc", string sortField = "Item Name")
         {
             //For the Report View
             var sumQ = from i in _context.Inventories
@@ -991,14 +1334,19 @@ namespace CAAMarketing.Controllers
                        {
                            ID = i.ItemID,
                            Category = i.Item.Category.Name,
+                           CategoryID = i.Item.Category.Id,
                            UPC = i.Item.UPC,
+                           ItemID = i.Item.ID,
                            ItemName = i.Item.Name,
                            Cost = i.Cost,
                            Quantity = i.Quantity,
                            Location = i.Location.Name,
                            LocationID = i.LocationID,
                            Supplier = i.Item.Supplier.Name,
+                           SupplierID = i.Item.Supplier.ID,
                            DateReceived = (DateTime)i.Item.DateReceived,
+                           Inventories = i.Item.Inventories,
+                           ItemLocations = i.Item.ItemLocations,
                            Notes = i.Item.Notes
                        };
 
@@ -1015,7 +1363,7 @@ namespace CAAMarketing.Controllers
 
             //List of sort options.
             //NOTE: make sure this array has matching values to the column headings
-            string[] sortOptions = new[] { "UPC", "ItemName", "Quantity", "Location" };
+            string[] sortOptions = new[] { "UPC", "Item Name", "Quantity", "Location" };
 
             //Add as many filters as needed
             if (LocationID.Length > 0)
@@ -1024,13 +1372,60 @@ namespace CAAMarketing.Controllers
                 ViewData["Filtering"] = "btn-danger";
             }
 
-            if (!String.IsNullOrEmpty(SearchString))
+            if (!String.IsNullOrEmpty(SearchString1))
             {
                 long searchUPC;
-                bool isNumeric = long.TryParse(SearchString, out searchUPC);
-                sumQ = sumQ.Where(p => p.ItemName.ToUpper().Contains(SearchString.ToUpper())
-                                       || (isNumeric && p.UPC == searchUPC));
+                bool isNumeric = long.TryParse(SearchString1, out searchUPC);
+                sumQ = sumQ.Where(p => (isNumeric && p.UPC == searchUPC));
                 ViewData["Filtering"] = "btn-danger";
+            }
+            if (!String.IsNullOrEmpty(SearchString2))
+            {
+                sumQ = sumQ.Where(p => p.ItemName.ToUpper().Contains(SearchString2.ToUpper()));
+                ViewData["Filtering"] = "btn-danger";
+            }
+            if (!String.IsNullOrEmpty(SearchString3))
+            {
+                sumQ = sumQ.Where(p => p.ItemName.ToUpper().Contains(SearchString3.ToUpper()));
+                ViewData["Filtering"] = "btn-danger";
+            }
+
+            // Filter by quantity range
+            if (MinQuantity != null && MaxQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity >= MinQuantity && x.Quantity <= MaxQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinQuantity = MinQuantity;
+                ViewBag.MaxQuantity = MaxQuantity;
+            }
+            else if (MinQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity >= MinQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinQuantity = MinQuantity;
+            }
+            else if (MaxQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity <= MaxQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MaxQuantity = MaxQuantity;
+            }
+            //filter locations based on stock levels if needed
+            if (filterByBaseStockLevel || filterByLowStockLevel || filterByOutOfStockLevel)
+            {
+                sumQ = sumQ.Where(l => l.Inventories.Any(i =>
+                    (filterByBaseStockLevel && i.Quantity < i.BaseStockLevel) ||
+                    (filterByLowStockLevel && i.Quantity < i.LowInventoryThreshold) ||
+                    (filterByOutOfStockLevel && i.Quantity == 0)
+                ));
+
+                ViewData["Filtering"] = "btn-danger";
+                ViewBag.FilterByBaseStockLevel = new { IsChecked = filterByBaseStockLevel };
+                ViewBag.FilterByLowStockLevel = new { IsChecked = filterByLowStockLevel };
+                ViewBag.FilterByOutOfStockLevel = new { IsChecked = filterByOutOfStockLevel };
             }
 
             //Before we sort, see if we have called for a change of filtering or sorting
@@ -1103,25 +1498,202 @@ namespace CAAMarketing.Controllers
             ViewData["sortField"] = sortField;
             ViewData["sortDirection"] = sortDirection;
 
-            int pageSize = PageSizeHelper.SetPageSize(HttpContext, pageSizeID, "InventoryLevelsReport");//Remember for this View
-            ViewData["pageSizeID"] = PageSizeHelper.PageSizeList(pageSize);
-            var pagedData = await PaginatedList<InventoryReportVM>.CreateAsync(sumQ.AsNoTracking(), page ?? 1, pageSize);
+            //int pageSize = PageSizeHelper.SetPageSize(HttpContext, pageSizeID, "InventoryLevelsReport");//Remember for this View
+            //ViewData["pageSizeID"] = PageSizeHelper.PageSizeList(pageSize);
+            //var pagedData = await PaginatedList<InventoryReportVM>.CreateAsync(sumQ.AsNoTracking(), page ?? 1, pageSize);
 
-            return View(pagedData);
+            //return View(pagedData);
+            return View(sumQ);
         }
 
         //Method for Excel Inventory Levels Report
-        public ActionResult DownloadInventoryLevels()
+        public ActionResult DownloadInventoryLevels(string SearchString1, string SearchString2, string SearchString3, int?[] LocationID, int? MinQuantity, int? MaxQuantity,
+             bool filterByBaseStockLevel, bool filterByLowStockLevel, bool filterByOutOfStockLevel, int? page, int? pageSizeID, string actionButton, string sortDirection = "asc", string sortField = "Item Name")
         {
+            //For Report
+            var sumQ = from i in _context.Inventories
+                        .Include(i => i.Item.Supplier)
+                        .Include(i => i.Item.Category)
+                        .Include(i => i.Item.Employee)
+                        .Include(i => i.Item.ItemLocations).ThenInclude(i => i.Location)
+                       orderby i.Location, i.Quantity ascending
+                       select new InventoryReportVM
+                       {
+                           ID = i.ItemID,
+                           Category = i.Item.Category.Name,
+                           CategoryID = i.Item.Category.Id,
+                           UPC = i.Item.UPC,
+                           ItemID = i.Item.ID,
+                           ItemName = i.Item.Name,
+                           Cost = i.Cost,
+                           Quantity = i.Quantity,
+                           Location = i.Location.Name,
+                           LocationID = i.LocationID,
+                           Supplier = i.Item.Supplier.Name,
+                           SupplierID = i.Item.Supplier.ID,
+                           DateReceived = (DateTime)i.Item.DateReceived,
+                           Inventories = i.Item.Inventories,
+                           ItemLocations = i.Item.ItemLocations,
+                           Notes = i.Item.Notes
+                       };
+
+            ViewDataReturnURL();
+
+            //Clear the sort/filter/paging URL Cookie for Controller
+            CookieHelper.CookieSet(HttpContext, ControllerName() + "URL", "", -1);
+
+            //Toggle the Open/Closed state of the collapse depending on if we are filtering
+            ViewData["Filtering"] = ""; //Assume not filtering
+
+            //Populating the DropDownLists for the Search/Filtering criteria, which are the Location
+            ViewData["LocationID"] = new SelectList(_context.Locations, "Id", "Name");
+
+            //List of sort options.
+            //NOTE: make sure this array has matching values to the column headings
+            string[] sortOptions = new[] { "UPC", "Item Name", "Quantity", "Location" };
+
+            //Add as many filters as needed
+            if (LocationID.Length > 0)
+            {
+                sumQ = sumQ.Where(p => LocationID.Contains(p.LocationID));
+                ViewData["Filtering"] = "btn-danger";
+            }
+
+            if (!String.IsNullOrEmpty(SearchString1))
+            {
+                long searchUPC;
+                bool isNumeric = long.TryParse(SearchString1, out searchUPC);
+                sumQ = sumQ.Where(p => (isNumeric && p.UPC == searchUPC));
+                ViewData["Filtering"] = "btn-danger";
+            }
+            if (!String.IsNullOrEmpty(SearchString2))
+            {
+                sumQ = sumQ.Where(p => p.ItemName.ToUpper().Contains(SearchString2.ToUpper()));
+                ViewData["Filtering"] = "btn-danger";
+            }
+            if (!String.IsNullOrEmpty(SearchString3))
+            {
+                sumQ = sumQ.Where(p => p.ItemName.ToUpper().Contains(SearchString3.ToUpper()));
+                ViewData["Filtering"] = "btn-danger";
+            }
+
+            // Filter by quantity range
+            if (MinQuantity != null && MaxQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity >= MinQuantity && x.Quantity <= MaxQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinQuantity = MinQuantity;
+                ViewBag.MaxQuantity = MaxQuantity;
+            }
+            else if (MinQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity >= MinQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinQuantity = MinQuantity;
+            }
+            else if (MaxQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity <= MaxQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MaxQuantity = MaxQuantity;
+            }
+            //filter locations based on stock levels if needed
+            if (filterByBaseStockLevel || filterByLowStockLevel || filterByOutOfStockLevel)
+            {
+                sumQ = sumQ.Where(l => l.Inventories.Any(i =>
+                    (filterByBaseStockLevel && i.Quantity < i.BaseStockLevel) ||
+                    (filterByLowStockLevel && i.Quantity < i.LowInventoryThreshold) ||
+                    (filterByOutOfStockLevel && i.Quantity == 0)
+                ));
+
+                ViewData["Filtering"] = "btn-danger";
+                ViewBag.FilterByBaseStockLevel = new { IsChecked = filterByBaseStockLevel };
+                ViewBag.FilterByLowStockLevel = new { IsChecked = filterByLowStockLevel };
+                ViewBag.FilterByOutOfStockLevel = new { IsChecked = filterByOutOfStockLevel };
+            }
+
+            //Before we sort, see if we have called for a change of filtering or sorting
+            if (!String.IsNullOrEmpty(actionButton)) //Form Submitted!
+            {
+                if (sortOptions.Contains(actionButton))//Change of sort is requested
+                {
+                    if (actionButton == sortField) //Reverse order on same field
+                    {
+                        sortDirection = sortDirection == "asc" ? "desc" : "asc";
+                    }
+                    sortField = actionButton;//Sort by the button clicked
+                }
+            }
+
+            //Now we know which field and direction to sort by          
+            if (sortField == "UPC")
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.UPC);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.UPC);
+                }
+            }
+            else if (sortField == "Quantity")
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.Quantity);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.Quantity);
+                }
+            }
+            else if (sortField == "Location")
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.Location);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.Location);
+                }
+            }
+            else //Sorting by Item Name
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.ItemName);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.ItemName);
+                }
+            }
+            //Set sort for next time
+            ViewData["sortField"] = sortField;
+            ViewData["sortDirection"] = sortDirection;
+
             //Get the inventory
-            var items = from i in _context.Inventories
-                        orderby i.Location, i.Item.Name, i.Quantity ascending
+            var items = from i in sumQ
+                            //orderby i.Location, i.Quantity ascending
                         select new
                         {
-                            UPC = i.Item.UPC,
-                            Item = i.Item.Name,
+                            UPC = i.UPC,
+                            Item = i.ItemName,
                             Quantity = i.Quantity,
-                            Location = i.Location.Name
+                            Location = i.Location
                         };
             //How many rows?
             int numRows = items.Count();
@@ -1136,6 +1708,9 @@ namespace CAAMarketing.Controllers
                     //Note: Cells[row, column]
                     workSheet.Cells[3, 1].LoadFromCollection(items, true);
 
+                    //Style fee column for upc
+                    workSheet.Column(1).Style.Numberformat.Format = "##############0";
+
                     //Style fee column for currency
                     workSheet.Column(3).Style.Numberformat.Format = "###,###,##0";
 
@@ -1145,35 +1720,6 @@ namespace CAAMarketing.Controllers
 
                     //Make Item Quantity Bold/Colour coded
                     workSheet.Cells[4, 3, numRows + 3, 3].Style.Font.Bold = true;
-                    var item = from i in _context.Inventories
-                               orderby i.Location, i.Item.Name, i.Quantity ascending
-                               select i.Quantity;
-                    int row = 4;
-                    foreach (var qty in item)
-                    {
-                        if (row <= (numRows + 3))
-                        {
-                            if (qty == 0)
-                            {
-                                workSheet.Cells[row, 3].Style.Font.Color.SetColor(Color.Red);
-                                row++;
-                            }
-                            else if ((qty <= 10) && (qty > 0))
-                            {
-                                workSheet.Cells[row, 3].Style.Font.Color.SetColor(Color.Orange);
-                                row++;
-                            }
-                            else if (qty > 10)
-                            {
-                                workSheet.Cells[row, 3].Style.Font.Color.SetColor(Color.Green);
-                                row++;
-                            }
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
 
                     //Note: these are fine if you are only 'doing' one thing to the range of cells.
                     //Otherwise you should USE a range object for efficiency
@@ -1189,7 +1735,7 @@ namespace CAAMarketing.Controllers
                         totalQty.Formula = "Sum(" + (workSheet.Cells[4, 3].Address) + ":" + workSheet.Cells[numRows + 3, 3].Address + ")";
                         totalQty.Style.Font.Bold = true;
                         totalQty.Style.Numberformat.Format = "###,###,##0";
-                        var range = workSheet.Cells[numRows + 4, 4, numRows + 4, 5];
+                        var range = workSheet.Cells[numRows + 4, 3, numRows + 4, 4];
                         range.Merge = true;
                         range.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
                     }
@@ -1250,28 +1796,32 @@ namespace CAAMarketing.Controllers
         }
 
         //Method for Viewing Inventory Costs Report
-        public async Task<IActionResult> InventoryCostsReport(string SearchString, int?[] LocationID, int? page, int? pageSizeID, string actionButton,
-            string sortDirection = "asc", string sortField = "ItemName")
+        public async Task<IActionResult> InventoryCostsReport(string SearchString1, string SearchString2, string SearchString3, int?[] LocationID, decimal? MinCost,
+            bool filterByBaseStockLevel, bool filterByLowStockLevel, bool filterByOutOfStockLevel, decimal? MaxCost, int? MinQuantity, int? MaxQuantity, int? page, int? pageSizeID, string actionButton, string sortDirection = "asc", string sortField = "Item Name")
         {
             //For the Report View
             var sumQ = from i in _context.Inventories
                         .Include(i => i.Item.Supplier)
                         .Include(i => i.Item.Category)
-                        .Include(i => i.Item.Employee)
-                        .Include(i => i.Location)
+                        .Include(i => i.Item.ItemLocations).ThenInclude(i => i.Location)
                        orderby i.Item.Name ascending
                        select new InventoryReportVM
                        {
                            ID = i.ItemID,
                            Category = i.Item.Category.Name,
+                           CategoryID = i.Item.Category.Id,
                            UPC = i.Item.UPC,
+                           ItemID = i.Item.ID,
                            ItemName = i.Item.Name,
                            Cost = i.Cost,
                            Quantity = i.Quantity,
                            Location = i.Location.Name,
                            LocationID = i.LocationID,
                            Supplier = i.Item.Supplier.Name,
+                           SupplierID = i.Item.Supplier.ID,
                            DateReceived = (DateTime)i.Item.DateReceived,
+                           Inventories = i.Item.Inventories,
+                           ItemLocations = i.Item.ItemLocations,
                            Notes = i.Item.Notes
                        };
 
@@ -1288,7 +1838,7 @@ namespace CAAMarketing.Controllers
 
             //List of sort options.
             //NOTE: make sure this array has matching values to the column headings
-            string[] sortOptions = new[] { "UPC", "ItemName", "Cost", "Quantity", "Location" };
+            string[] sortOptions = new[] { "UPC", "Item Name", "Cost", "Quantity", "Location" };
 
             //Add as many filters as needed
             if (LocationID.Length > 0)
@@ -1297,13 +1847,83 @@ namespace CAAMarketing.Controllers
                 ViewData["Filtering"] = "btn-danger";
             }
 
-            if (!String.IsNullOrEmpty(SearchString))
+            if (!String.IsNullOrEmpty(SearchString1))
             {
                 long searchUPC;
-                bool isNumeric = long.TryParse(SearchString, out searchUPC);
-                sumQ = sumQ.Where(p => p.ItemName.ToUpper().Contains(SearchString.ToUpper())
-                                       || (isNumeric && p.UPC == searchUPC));
+                bool isNumeric = long.TryParse(SearchString1, out searchUPC);
+                sumQ = sumQ.Where(p => (isNumeric && p.UPC == searchUPC));
                 ViewData["Filtering"] = "btn-danger";
+            }
+            if (!String.IsNullOrEmpty(SearchString2))
+            {
+                sumQ = sumQ.Where(p => p.ItemName.ToUpper().Contains(SearchString2.ToUpper()));
+                ViewData["Filtering"] = "btn-danger";
+            }
+            if (!String.IsNullOrEmpty(SearchString3))
+            {
+                sumQ = sumQ.Where(p => p.ItemName.ToUpper().Contains(SearchString3.ToUpper()));
+                ViewData["Filtering"] = "btn-danger";
+            }
+            // Filter by cost range
+            if (MinCost != null && MaxCost != null)
+            {
+                sumQ = sumQ.Where(x => x.Cost >= MinCost && x.Cost <= MaxCost);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinCost = MinCost;
+                ViewBag.MaxCost = MaxCost;
+            }
+            else if (MinCost != null)
+            {
+                sumQ = sumQ.Where(x => x.Cost >= MinCost);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinCost = MinCost;
+            }
+            else if (MaxCost != null)
+            {
+                sumQ = sumQ.Where(x => x.Cost <= MaxCost);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MaxCost = MaxCost;
+            }
+
+            // Filter by quantity range
+            if (MinQuantity != null && MaxQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity >= MinQuantity && x.Quantity <= MaxQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinQuantity = MinQuantity;
+                ViewBag.MaxQuantity = MaxQuantity;
+            }
+            else if (MinQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity >= MinQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinQuantity = MinQuantity;
+            }
+            else if (MaxQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity <= MaxQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MaxQuantity = MaxQuantity;
+            }
+            //filter locations based on stock levels if needed
+            if (filterByBaseStockLevel || filterByLowStockLevel || filterByOutOfStockLevel)
+            {
+                sumQ = sumQ.Where(l => l.Inventories.Any(i =>
+                    (filterByBaseStockLevel && i.Quantity < i.BaseStockLevel) ||
+                    (filterByLowStockLevel && i.Quantity < i.LowInventoryThreshold) ||
+                    (filterByOutOfStockLevel && i.Quantity == 0)
+                ));
+
+                ViewData["Filtering"] = "btn-danger";
+                ViewBag.FilterByBaseStockLevel = new { IsChecked = filterByBaseStockLevel };
+                ViewBag.FilterByLowStockLevel = new { IsChecked = filterByLowStockLevel };
+                ViewBag.FilterByOutOfStockLevel = new { IsChecked = filterByOutOfStockLevel };
             }
 
             //Before we sort, see if we have called for a change of filtering or sorting
@@ -1389,26 +2009,237 @@ namespace CAAMarketing.Controllers
             ViewData["sortField"] = sortField;
             ViewData["sortDirection"] = sortDirection;
 
-            int pageSize = PageSizeHelper.SetPageSize(HttpContext, pageSizeID, "InventoryCostsReport");//Remember for this View
-            ViewData["pageSizeID"] = PageSizeHelper.PageSizeList(pageSize);
-            var pagedData = await PaginatedList<InventoryReportVM>.CreateAsync(sumQ.AsNoTracking(), page ?? 1, pageSize);
+            //int pageSize = PageSizeHelper.SetPageSize(HttpContext, pageSizeID, "InventoryCostsReport");//Remember for this View
+            //ViewData["pageSizeID"] = PageSizeHelper.PageSizeList(pageSize);
+            //var pagedData = await PaginatedList<InventoryReportVM>.CreateAsync(sumQ.AsNoTracking(), page ?? 1, pageSize);
 
-            return View(pagedData);
+            //return View(pagedData);
+            return View(sumQ);
         }
 
         //Method for Excel Inventory Costs Report
-        public ActionResult DownloadInventoryCosts()
+        public ActionResult DownloadInventoryCosts(string SearchString1, string SearchString2, string SearchString3, int?[] LocationID, decimal? MinCost,
+            bool filterByBaseStockLevel, bool filterByLowStockLevel, bool filterByOutOfStockLevel, decimal? MaxCost, int? MinQuantity, int? MaxQuantity, int? page, int? pageSizeID, string actionButton, string sortDirection = "asc", string sortField = "Item Name")
         {
+            //For the Report View
+            var sumQ = from i in _context.Inventories
+                        .Include(i => i.Item.Supplier)
+                        .Include(i => i.Item.Category)
+                        .Include(i => i.Item.ItemLocations).ThenInclude(i => i.Location)
+                       orderby i.Item.Name ascending
+                       select new InventoryReportVM
+                       {
+                           ID = i.ItemID,
+                           Category = i.Item.Category.Name,
+                           CategoryID = i.Item.Category.Id,
+                           UPC = i.Item.UPC,
+                           ItemID = i.Item.ID,
+                           ItemName = i.Item.Name,
+                           Cost = i.Cost,
+                           Quantity = i.Quantity,
+                           Location = i.Location.Name,
+                           LocationID = i.LocationID,
+                           Supplier = i.Item.Supplier.Name,
+                           SupplierID = i.Item.Supplier.ID,
+                           DateReceived = (DateTime)i.Item.DateReceived,
+                           Inventories = i.Item.Inventories,
+                           ItemLocations = i.Item.ItemLocations,
+                           Notes = i.Item.Notes
+                       };
+
+            ViewDataReturnURL();
+
+            //Clear the sort/filter/paging URL Cookie for Controller
+            CookieHelper.CookieSet(HttpContext, ControllerName() + "URL", "", -1);
+
+            //Toggle the Open/Closed state of the collapse depending on if we are filtering
+            ViewData["Filtering"] = ""; //Assume not filtering
+
+            //Populating the DropDownLists for the Search/Filtering criteria, which are the Location
+            ViewData["LocationID"] = new SelectList(_context.Locations, "Id", "Name");
+
+            //List of sort options.
+            //NOTE: make sure this array has matching values to the column headings
+            string[] sortOptions = new[] { "UPC", "Item Name", "Cost", "Quantity", "Location" };
+
+            //Add as many filters as needed
+            if (LocationID.Length > 0)
+            {
+                sumQ = sumQ.Where(p => LocationID.Contains(p.LocationID));
+                ViewData["Filtering"] = "btn-danger";
+            }
+
+            if (!String.IsNullOrEmpty(SearchString1))
+            {
+                long searchUPC;
+                bool isNumeric = long.TryParse(SearchString1, out searchUPC);
+                sumQ = sumQ.Where(p => (isNumeric && p.UPC == searchUPC));
+                ViewData["Filtering"] = "btn-danger";
+            }
+            if (!String.IsNullOrEmpty(SearchString2))
+            {
+                sumQ = sumQ.Where(p => p.ItemName.ToUpper().Contains(SearchString2.ToUpper()));
+                ViewData["Filtering"] = "btn-danger";
+            }
+            if (!String.IsNullOrEmpty(SearchString3))
+            {
+                sumQ = sumQ.Where(p => p.ItemName.ToUpper().Contains(SearchString3.ToUpper()));
+                ViewData["Filtering"] = "btn-danger";
+            }
+            // Filter by cost range
+            if (MinCost != null && MaxCost != null)
+            {
+                sumQ = sumQ.Where(x => x.Cost >= MinCost && x.Cost <= MaxCost);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinCost = MinCost;
+                ViewBag.MaxCost = MaxCost;
+            }
+            else if (MinCost != null)
+            {
+                sumQ = sumQ.Where(x => x.Cost >= MinCost);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinCost = MinCost;
+            }
+            else if (MaxCost != null)
+            {
+                sumQ = sumQ.Where(x => x.Cost <= MaxCost);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MaxCost = MaxCost;
+            }
+
+            // Filter by quantity range
+            if (MinQuantity != null && MaxQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity >= MinQuantity && x.Quantity <= MaxQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinQuantity = MinQuantity;
+                ViewBag.MaxQuantity = MaxQuantity;
+            }
+            else if (MinQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity >= MinQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinQuantity = MinQuantity;
+            }
+            else if (MaxQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity <= MaxQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MaxQuantity = MaxQuantity;
+            }
+            //filter locations based on stock levels if needed
+            if (filterByBaseStockLevel || filterByLowStockLevel || filterByOutOfStockLevel)
+            {
+                sumQ = sumQ.Where(l => l.Inventories.Any(i =>
+                    (filterByBaseStockLevel && i.Quantity < i.BaseStockLevel) ||
+                    (filterByLowStockLevel && i.Quantity < i.LowInventoryThreshold) ||
+                    (filterByOutOfStockLevel && i.Quantity == 0)
+                ));
+
+                ViewData["Filtering"] = "btn-danger";
+                ViewBag.FilterByBaseStockLevel = new { IsChecked = filterByBaseStockLevel };
+                ViewBag.FilterByLowStockLevel = new { IsChecked = filterByLowStockLevel };
+                ViewBag.FilterByOutOfStockLevel = new { IsChecked = filterByOutOfStockLevel };
+            }
+            //Before we sort, see if we have called for a change of filtering or sorting
+            if (!String.IsNullOrEmpty(actionButton)) //Form Submitted!
+            {
+                if (sortOptions.Contains(actionButton))//Change of sort is requested
+                {
+                    if (actionButton == sortField) //Reverse order on same field
+                    {
+                        sortDirection = sortDirection == "asc" ? "desc" : "asc";
+                    }
+                    sortField = actionButton;//Sort by the button clicked
+                }
+            }
+
+            //Now we know which field and direction to sort by          
+            if (sortField == "UPC")
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.UPC);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.UPC);
+                }
+            }
+            else if (sortField == "Cost")
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.Cost.ToString());
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.Cost.ToString());
+                }
+            }
+            else if (sortField == "Quantity")
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.Quantity);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.Quantity);
+                }
+            }
+            else if (sortField == "Location")
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.Location);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.Location);
+                }
+            }
+            else //Sorting by Item Name
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.ItemName);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.ItemName);
+                }
+            }
+            //Set sort for next time
+            ViewData["sortField"] = sortField;
+            ViewData["sortDirection"] = sortDirection;
+
             //Get the inventory
-            var items = from i in _context.Inventories
-                        orderby i.Location, i.Item.Name, i.Quantity ascending
+            var items = from i in sumQ
+                            //orderby i.Location, i.ItemName, i.Quantity ascending
                         select new
                         {
-                            UPC = i.Item.UPC,
-                            Item = i.Item.Name,
+                            UPC = i.UPC,
+                            Item = i.ItemName,
                             Cost = i.Cost,
                             Quantity = i.Quantity,
-                            Location = i.Location.Name
+                            Location = i.Location
                         };
             //How many rows?
             int numRows = items.Count();
@@ -1423,6 +2254,9 @@ namespace CAAMarketing.Controllers
                     //Note: Cells[row, column]
                     workSheet.Cells[3, 1].LoadFromCollection(items, true);
 
+                    //Style fee column for upc
+                    workSheet.Column(1).Style.Numberformat.Format = "##############0";
+
                     //Style fee column for quantity
                     workSheet.Column(4).Style.Numberformat.Format = "###,###,##0";
 
@@ -1435,53 +2269,61 @@ namespace CAAMarketing.Controllers
 
                     //Make Item Quantity Bold/Colour coded
                     workSheet.Cells[4, 3, numRows + 3, 4].Style.Font.Bold = true;
-                    var item = from i in _context.Inventories
-                               orderby i.Location, i.Item.Name, i.Quantity ascending
-                               select i.Quantity;
-                    int row = 4;
-                    foreach (var qty in item)
-                    {
-                        if (row <= (numRows + 3))
-                        {
-                            if (qty == 0)
-                            {
-                                workSheet.Cells[row, 4].Style.Font.Color.SetColor(Color.Red);
-                                row++;
-                            }
-                            else if ((qty <= 10) && (qty > 0))
-                            {
-                                workSheet.Cells[row, 4].Style.Font.Color.SetColor(Color.Orange);
-                                row++;
-                            }
-                            else if (qty > 10)
-                            {
-                                workSheet.Cells[row, 4].Style.Font.Color.SetColor(Color.Green);
-                                row++;
-                            }
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
+                    //var item = from i in sumQ
+                    //           orderby i.Location, i.ItemName, i.Quantity ascending
+                    //           select i.Quantity;
+                    //int row = 4;
+                    //foreach (var qty in item)
+                    //{
+                    //    if (row <= (numRows + 3))
+                    //    {
+                    //        if (qty == 0)
+                    //        {
+                    //            workSheet.Cells[row, 4].Style.Font.Color.SetColor(Color.Red);
+                    //            row++;
+                    //        }
+                    //        else if ((qty <= 10) && (qty > 0))
+                    //        {
+                    //            workSheet.Cells[row, 4].Style.Font.Color.SetColor(Color.Orange);
+                    //            row++;
+                    //        }
+                    //        else if (qty > 10)
+                    //        {
+                    //            workSheet.Cells[row, 4].Style.Font.Color.SetColor(Color.Green);
+                    //            row++;
+                    //        }
+                    //    }
+                    //    else
+                    //    {
+                    //        break;
+                    //    }
+                    //}
 
                     //Note: these are fine if you are only 'doing' one thing to the range of cells.
                     //Otherwise you should USE a range object for efficiency
                     //Total Cost for all Items in Inventory
                     //workSheet.Cells[4, 4, numRows + 3, 5].Calculate();
                     //Total Cost
-                    using (ExcelRange totalfees = workSheet.Cells[numRows + 4, 3])//
+                    using (ExcelRange totalfees = workSheet.Cells[numRows + 4, 4])//
                     {
                         //Total Cost Text
-                        workSheet.Cells[numRows + 4, 2].Value = "Total Cost:";
-                        workSheet.Cells[numRows + 4, 2].Style.Font.Bold = true;
-                        workSheet.Cells[numRows + 4, 2].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                        workSheet.Cells[numRows + 4, 3].Value = "Total Cost:";
+                        workSheet.Cells[numRows + 4, 3].Style.Font.Bold = true;
+                        workSheet.Cells[numRows + 4, 3].Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+
                         //Total Cost Sum - get cost * qty for each row
-                        totalfees.Formula = "Sum(" + (workSheet.Cells[4, 3].Address) + ":" + workSheet.Cells[numRows + 3, 3].Address + ")" + "*" + "Sum(" +
-                            (workSheet.Cells[4, 4].Address) + ":" + workSheet.Cells[numRows + 3, 4].Address + ")";
+                        decimal totalCost = 0m;
+                        for (int row = 4; row <= numRows + 3; row++)
+                        {
+                            decimal cost = (decimal)workSheet.Cells[row, 3].Value;
+                            int qty = (int)workSheet.Cells[row, 4].Value;
+                            totalCost += cost * qty;
+                        }
+
+                        totalfees.Value = totalCost;
                         totalfees.Style.Font.Bold = true;
                         totalfees.Style.Numberformat.Format = "$###,###,##0.00";
-                        var range = workSheet.Cells[numRows + 4, 3, numRows + 4, 4];
+                        var range = workSheet.Cells[numRows + 4, 4, numRows + 4, 5];
                         range.Merge = true;
                         range.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
                     }
@@ -1542,35 +2384,45 @@ namespace CAAMarketing.Controllers
         }
 
         //Method for Viewing Inventory Events Report
-        public async Task<IActionResult> InventoryEventsReport(string SearchString, int?[] LocationID, int? page, int? pageSizeID, string actionButton,
-            string sortDirection = "asc", string sortField = "EventName")
+        public async Task<IActionResult> InventoryEventsReport(string SearchString1, string SearchString2, string SearchString3, int?[] LocationID, DateTime? returnToDate, DateTime? reservedToDate,
+             DateTime? returnFromDate, DateTime? reservedFromDate, int? MinQuantity, int? MaxQuantity, bool filterByLowStockLevel, bool filterByOutOfStockLevel,
+                int? page, int? pageSizeID, string actionButton, string sortDirection = "asc", string sortField = "Event Name")
         {
             //For the Report View
-            var sumQ = from i in _context.EventLogs
-                       .Include(i => i.ItemReservation)
-                       orderby i.EventName, i.ItemName ascending
+            //var sumQ = from i in _context.EventLogs
+            //           .Include(i => i.ItemReservation)
+            //           orderby i.EventName, i.ItemName ascending
+            //           select new EventReportVM
+            //           {
+            //               Id = i.Id,
+            //               EventName = i.EventName,
+            //               ItemName = i.ItemName,
+            //               Quantity = i.Quantity,
+            //               LocationID = i.ItemReservation.LocationID,
+            //               Location = i.ItemReservation.Location.Name,
+            //               ReservedDate = (DateTime)i.ItemReservation.ReservedDate,
+            //               ReturnDate = (DateTime)i.ItemReservation.ReturnDate,
+            //               //LogDate = i.LogDate
+            //           };
+
+            var sumQ = from i in _context.ItemReservations
+                .Include(ir => ir.Item)
+                .Include(ir => ir.Location)
+                           //.Where(ir => ir.EventId == id)
+                       orderby i.Event.Name, i.Item.Name ascending
                        select new EventReportVM
                        {
                            Id = i.Id,
-                           EventName = i.EventName,
-                           ItemName = i.ItemName,
+                           EventName = i.Event.Name,
+                           ItemID = i.Item.ID,
+                           ItemName = i.Item.Name,
                            Quantity = i.Quantity,
-                           //LocationID = i.ItemReservation.LocationID,
-                           //Location = i.ItemReservation.Location.ToString()
-                           LogDate = i.LogDate
+                           LocationID = i.LocationID,
+                           Location = i.Location.Name,
+                           ReservedDate = (DateTime)i.Event.ReservedEventDate,
+                           ReturnDate = (DateTime)i.Event.ReturnEventDate,
+                           //LogDate = i.LogDate
                        };
-
-            //var sumQ = from i in _context.ItemReservations
-            //            .Include(i => i.Event)
-            //            .Include(i => i.Item)
-            //           orderby i.Event.Name, i.Item.Name ascending
-            //           select new EventReportVM
-            //           {
-            //               Id = i.EventId,
-            //               EventName = i.Event.Name,
-            //               ItemName = i.Item.Name,
-            //               Quantity = i.Quantity
-            //           };
 
             ViewDataReturnURL();
 
@@ -1580,25 +2432,112 @@ namespace CAAMarketing.Controllers
             //Toggle the Open/Closed state of the collapse depending on if we are filtering
             ViewData["Filtering"] = ""; //Assume not filtering
 
-            ////Populating the DropDownLists for the Search/Filtering criteria, which are the Location
-            //ViewData["LocationID"] = new SelectList(_context.Locations, "Id", "Name");
+            //Populating the DropDownLists for the Search/Filtering criteria, which are the Location
+            ViewData["LocationID"] = new SelectList(_context.Locations, "Id", "Name");
 
             //List of sort options.
             //NOTE: make sure this array has matching values to the column headings
-            string[] sortOptions = new[] { "EventName", "ItemName", "Quantity", "LogDate", "Location" };
+            string[] sortOptions = new[] { "Event Name", "Item Name", "Quantity", "LogDate", "Location", "Reserved Date", "Return Date" };
 
-            ////Add as many filters as needed
-            //if (LocationID.Length > 0)
-            //{
-            //    sumQ = sumQ.Where(p => LocationID.Contains(p.LocationID));
-            //    ViewData["Filtering"] = "btn-danger";
-            //}
-
-            if (!String.IsNullOrEmpty(SearchString))
+            //Add as many filters as needed
+            if (LocationID.Length > 0)
             {
-                sumQ = sumQ.Where(p => p.ItemName.ToUpper().Contains(SearchString.ToUpper())
-                                       || p.EventName.ToUpper().Contains(SearchString.ToUpper()));
+                sumQ = sumQ.Where(p => LocationID.Contains(p.LocationID));
                 ViewData["Filtering"] = "btn-danger";
+            }
+
+            if (!String.IsNullOrEmpty(SearchString1))
+            {
+                sumQ = sumQ.Where(p => p.EventName.ToUpper().Contains(SearchString1.ToUpper()));
+                ViewData["Filtering"] = "btn-danger";
+            }
+            if (!String.IsNullOrEmpty(SearchString2))
+            {
+                sumQ = sumQ.Where(p => p.ItemName.ToUpper().Contains(SearchString2.ToUpper()));
+                ViewData["Filtering"] = "btn-danger";
+            }
+            if (!String.IsNullOrEmpty(SearchString3))
+            {
+                sumQ = sumQ.Where(p => p.EventName.ToUpper().Contains(SearchString3.ToUpper()));
+                ViewData["Filtering"] = "btn-danger";
+            }
+
+            if (reservedFromDate != null || reservedToDate != null)
+            {
+                if (reservedFromDate != null && reservedToDate != null)
+                {
+                    // Filter records where DateReceived is within the specified range
+                    sumQ = sumQ.Where(x => x.ReservedDate >= reservedFromDate && x.ReservedDate <= reservedToDate);
+                    ViewData["Filtering"] = "btn-danger";
+                }
+                else
+                {
+                    // Filter records where DateReceived is greater than or equal to FromDate or less than or equal to ToDate
+                    sumQ = sumQ.Where(x => x.ReservedDate >= reservedFromDate || x.ReservedDate <= reservedToDate);
+                    //sumQ = sumQ.Where(x => x.LogDate >= FromDate || x.LogDate <= ToDate);
+                    ViewData["Filtering"] = "btn-danger";
+                }
+                // Pass the FromDate and ToDate values back to the view
+                //ViewBag.FromDate = FromDate;
+                //ViewBag.ToDate = ToDate;
+                ViewBag.ReservedFromDate = reservedFromDate;
+                ViewBag.ReservedToDate = reservedToDate;
+            }
+            if (returnFromDate != null || returnToDate != null)
+            {
+                if (returnFromDate != null && returnToDate != null)
+                {
+                    // Filter records where DateReceived is within the specified range
+                    sumQ = sumQ.Where(x => x.ReturnDate >= returnFromDate && x.ReturnDate <= returnToDate);
+                    //sumQ = sumQ.Where(x => x.LogDate >= FromDate && x.LogDate <= ToDate);
+                    ViewData["Filtering"] = "btn-danger";
+                }
+                else
+                {
+                    // Filter records where DateReceived is greater than or equal to FromDate or less than or equal to ToDate
+                    sumQ = sumQ.Where(x => x.ReturnDate >= returnFromDate || x.ReturnDate <= returnToDate);
+                    //sumQ = sumQ.Where(x => x.LogDate >= FromDate || x.LogDate <= ToDate);
+                    ViewData["Filtering"] = "btn-danger";
+                }
+                // Pass the FromDate and ToDate values back to the view
+                //ViewBag.FromDate = FromDate;
+                //ViewBag.ToDate = ToDate;
+                ViewBag.ReturnFromDate = returnFromDate;
+                ViewBag.ReturnToDate = returnToDate;
+            }
+
+            // Filter by quantity range
+            if (MinQuantity != null && MaxQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity >= MinQuantity && x.Quantity <= MaxQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinQuantity = MinQuantity;
+                ViewBag.MaxQuantity = MaxQuantity;
+            }
+            else if (MinQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity >= MinQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinQuantity = MinQuantity;
+            }
+            else if (MaxQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity <= MaxQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MaxQuantity = MaxQuantity;
+            }
+            //filter locations based on stock levels if needed
+            if (filterByLowStockLevel || filterByOutOfStockLevel)
+            {
+                sumQ = sumQ.Where(i => (filterByLowStockLevel && i.Quantity < 10) ||
+                    (filterByOutOfStockLevel && i.Quantity == 0));
+
+                ViewData["Filtering"] = "btn-danger";
+                ViewBag.FilterByLowStockLevel = new { IsChecked = filterByLowStockLevel };
+                ViewBag.FilterByOutOfStockLevel = new { IsChecked = filterByOutOfStockLevel };
             }
 
             //Before we sort, see if we have called for a change of filtering or sorting
@@ -1615,7 +2554,7 @@ namespace CAAMarketing.Controllers
             }
 
             //Now we know which field and direction to sort by          
-            if (sortField == "ItemName")
+            if (sortField == "Item Name")
             {
                 if (sortDirection == "asc")
                 {
@@ -1641,32 +2580,58 @@ namespace CAAMarketing.Controllers
                         .OrderByDescending(p => p.Quantity);
                 }
             }
-            //else if (sortField == "Location")
-            //{
-            //    if (sortDirection == "asc")
-            //    {
-            //        sumQ = sumQ
-            //            .OrderBy(p => p.Location);
-            //    }
-            //    else
-            //    {
-            //        sumQ = sumQ
-            //            .OrderByDescending(p => p.Location);
-            //    }
-            //}
-            else if (sortField == "LogDate")
+            else if (sortField == "Location")
             {
                 if (sortDirection == "asc")
                 {
                     sumQ = sumQ
-                        .OrderBy(p => p.LogDate);
+                        .OrderBy(p => p.Location);
                 }
                 else
                 {
                     sumQ = sumQ
-                        .OrderByDescending(p => p.LogDate);
+                        .OrderByDescending(p => p.Location);
                 }
             }
+            else if (sortField == "Reserved Date")
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.ReservedDate);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.ReservedDate);
+                }
+            }
+            else if (sortField == "Return Date")
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.ReturnDate);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.ReturnDate);
+                }
+            }
+            //else if (sortField == "LogDate")
+            //{
+            //    if (sortDirection == "asc")
+            //    {
+            //        sumQ = sumQ
+            //            .OrderBy(p => p.LogDate);
+            //    }
+            //    else
+            //    {
+            //        sumQ = sumQ
+            //            .OrderByDescending(p => p.LogDate);
+            //    }
+            //}
             else //Sorting by Item Name
             {
                 if (sortDirection == "asc")
@@ -1684,26 +2649,294 @@ namespace CAAMarketing.Controllers
             ViewData["sortField"] = sortField;
             ViewData["sortDirection"] = sortDirection;
 
-            int pageSize = PageSizeHelper.SetPageSize(HttpContext, pageSizeID, "InventoryEventsReport");//Remember for this View
-            ViewData["pageSizeID"] = PageSizeHelper.PageSizeList(pageSize);
-            var pagedData = await PaginatedList<EventReportVM>.CreateAsync(sumQ.AsNoTracking(), page ?? 1, pageSize);
+            //int pageSize = PageSizeHelper.SetPageSize(HttpContext, pageSizeID, "InventoryEventsReport");//Remember for this View
+            //ViewData["pageSizeID"] = PageSizeHelper.PageSizeList(pageSize);
+            //var pagedData = await PaginatedList<EventReportVM>.CreateAsync(sumQ.AsNoTracking(), page ?? 1, pageSize);
 
-            return View(pagedData);
+            //return View(pagedData);
+            return View(sumQ);
         }
 
+
         //Method for Excel Inventory Events Report
-        public ActionResult DownloadInventoryEvents()
+        public ActionResult DownloadInventoryEvents(string SearchString1, string SearchString2, string SearchString3, int?[] LocationID, DateTime? returnToDate, DateTime? reservedToDate,
+             DateTime? returnFromDate, DateTime? reservedFromDate, int? MinQuantity, int? MaxQuantity, bool filterByLowStockLevel, bool filterByOutOfStockLevel,
+                int? page, int? pageSizeID, string actionButton, string sortDirection = "asc", string sortField = "Event Name")
         {
+            //For the Report View
+            //var sumQ = from i in _context.EventLogs
+            //           .Include(i => i.ItemReservation)
+            //           orderby i.EventName, i.ItemName ascending
+            //           select new EventReportVM
+            //           {
+            //               Id = i.Id,
+            //               EventName = i.EventName,
+            //               ItemName = i.ItemName,
+            //               Quantity = i.Quantity,
+            //               LocationID = i.ItemReservation.LocationID,
+            //               Location = i.ItemReservation.Location.Name,
+            //               ReservedDate = (DateTime)i.ItemReservation.ReservedDate,
+            //               ReturnDate = (DateTime)i.ItemReservation.ReturnDate,
+            //               //LogDate = i.LogDate
+            //           };
+
+            var sumQ = from i in _context.ItemReservations
+                .Include(ir => ir.Item)
+                .Include(ir => ir.Location)
+                           //.Where(ir => ir.EventId == id)
+                       orderby i.Event.Name, i.Item.Name ascending
+                       select new EventReportVM
+                       {
+                           Id = i.Id,
+                           EventName = i.Event.Name,
+                           ItemID = i.Item.ID,
+                           ItemName = i.Item.Name,
+                           Quantity = i.Quantity,
+                           LocationID = i.LocationID,
+                           Location = i.Location.Name,
+                           ReservedDate = (DateTime)i.Event.ReservedEventDate,
+                           ReturnDate = (DateTime)i.Event.ReturnEventDate,
+                           //LogDate = i.LogDate
+                       };
+
+            ViewDataReturnURL();
+
+            //Clear the sort/filter/paging URL Cookie for Controller
+            CookieHelper.CookieSet(HttpContext, ControllerName() + "URL", "", -1);
+
+            //Toggle the Open/Closed state of the collapse depending on if we are filtering
+            ViewData["Filtering"] = ""; //Assume not filtering
+
+            //Populating the DropDownLists for the Search/Filtering criteria, which are the Location
+            ViewData["LocationID"] = new SelectList(_context.Locations, "Id", "Name");
+
+            //List of sort options.
+            //NOTE: make sure this array has matching values to the column headings
+            string[] sortOptions = new[] { "Event Name", "Item Name", "Quantity", "LogDate", "Location", "Reserved Date", "Return Date" };
+
+            //Add as many filters as needed
+            if (LocationID.Length > 0)
+            {
+                sumQ = sumQ.Where(p => LocationID.Contains(p.LocationID));
+                ViewData["Filtering"] = "btn-danger";
+            }
+
+            if (!String.IsNullOrEmpty(SearchString1))
+            {
+                sumQ = sumQ.Where(p => p.EventName.ToUpper().Contains(SearchString1.ToUpper()));
+                ViewData["Filtering"] = "btn-danger";
+            }
+            if (!String.IsNullOrEmpty(SearchString2))
+            {
+                sumQ = sumQ.Where(p => p.ItemName.ToUpper().Contains(SearchString2.ToUpper()));
+                ViewData["Filtering"] = "btn-danger";
+            }
+            if (!String.IsNullOrEmpty(SearchString3))
+            {
+                sumQ = sumQ.Where(p => p.EventName.ToUpper().Contains(SearchString3.ToUpper()));
+                ViewData["Filtering"] = "btn-danger";
+            }
+
+            if (reservedFromDate != null || reservedToDate != null)
+            {
+                if (reservedFromDate != null && reservedToDate != null)
+                {
+                    // Filter records where DateReceived is within the specified range
+                    sumQ = sumQ.Where(x => x.ReservedDate >= reservedFromDate && x.ReservedDate <= reservedToDate);
+                    ViewData["Filtering"] = "btn-danger";
+                }
+                else
+                {
+                    // Filter records where DateReceived is greater than or equal to FromDate or less than or equal to ToDate
+                    sumQ = sumQ.Where(x => x.ReservedDate >= reservedFromDate || x.ReservedDate <= reservedToDate);
+                    //sumQ = sumQ.Where(x => x.LogDate >= FromDate || x.LogDate <= ToDate);
+                    ViewData["Filtering"] = "btn-danger";
+                }
+                // Pass the FromDate and ToDate values back to the view
+                //ViewBag.FromDate = FromDate;
+                //ViewBag.ToDate = ToDate;
+                ViewBag.ReservedFromDate = reservedFromDate;
+                ViewBag.ReservedToDate = reservedToDate;
+            }
+            if (returnFromDate != null || returnToDate != null)
+            {
+                if (returnFromDate != null && returnToDate != null)
+                {
+                    // Filter records where DateReceived is within the specified range
+                    sumQ = sumQ.Where(x => x.ReturnDate >= returnFromDate && x.ReturnDate <= returnToDate);
+                    //sumQ = sumQ.Where(x => x.LogDate >= FromDate && x.LogDate <= ToDate);
+                    ViewData["Filtering"] = "btn-danger";
+                }
+                else
+                {
+                    // Filter records where DateReceived is greater than or equal to FromDate or less than or equal to ToDate
+                    sumQ = sumQ.Where(x => x.ReturnDate >= returnFromDate || x.ReturnDate <= returnToDate);
+                    //sumQ = sumQ.Where(x => x.LogDate >= FromDate || x.LogDate <= ToDate);
+                    ViewData["Filtering"] = "btn-danger";
+                }
+                // Pass the FromDate and ToDate values back to the view
+                //ViewBag.FromDate = FromDate;
+                //ViewBag.ToDate = ToDate;
+                ViewBag.ReturnFromDate = returnFromDate;
+                ViewBag.ReturnToDate = returnToDate;
+            }
+
+            // Filter by quantity range
+            if (MinQuantity != null && MaxQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity >= MinQuantity && x.Quantity <= MaxQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinQuantity = MinQuantity;
+                ViewBag.MaxQuantity = MaxQuantity;
+            }
+            else if (MinQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity >= MinQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MinQuantity = MinQuantity;
+            }
+            else if (MaxQuantity != null)
+            {
+                sumQ = sumQ.Where(x => x.Quantity <= MaxQuantity);
+                ViewData["Filtering"] = "btn-danger";
+                // Pass the values back to the view
+                ViewBag.MaxQuantity = MaxQuantity;
+            }
+            //filter locations based on stock levels if needed
+            if (filterByLowStockLevel || filterByOutOfStockLevel)
+            {
+                sumQ = sumQ.Where(i => (filterByLowStockLevel && i.Quantity < 10) ||
+                    (filterByOutOfStockLevel && i.Quantity == 0));
+
+                ViewData["Filtering"] = "btn-danger";
+                ViewBag.FilterByLowStockLevel = new { IsChecked = filterByLowStockLevel };
+                ViewBag.FilterByOutOfStockLevel = new { IsChecked = filterByOutOfStockLevel };
+            }
+
+            //Before we sort, see if we have called for a change of filtering or sorting
+            if (!String.IsNullOrEmpty(actionButton)) //Form Submitted!
+            {
+                if (sortOptions.Contains(actionButton))//Change of sort is requested
+                {
+                    if (actionButton == sortField) //Reverse order on same field
+                    {
+                        sortDirection = sortDirection == "asc" ? "desc" : "asc";
+                    }
+                    sortField = actionButton;//Sort by the button clicked
+                }
+            }
+
+            //Now we know which field and direction to sort by          
+            if (sortField == "Item Name")
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.ItemName);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.ItemName);
+                }
+            }
+            else if (sortField == "Quantity")
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.Quantity);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.Quantity);
+                }
+            }
+            else if (sortField == "Location")
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.Location);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.Location);
+                }
+            }
+            else if (sortField == "Reserved Date")
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.ReservedDate);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.ReservedDate);
+                }
+            }
+            else if (sortField == "Return Date")
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.ReturnDate);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.ReturnDate);
+                }
+            }
+            //else if (sortField == "LogDate")
+            //{
+            //    if (sortDirection == "asc")
+            //    {
+            //        sumQ = sumQ
+            //            .OrderBy(p => p.LogDate);
+            //    }
+            //    else
+            //    {
+            //        sumQ = sumQ
+            //            .OrderByDescending(p => p.LogDate);
+            //    }
+            //}
+            else //Sorting by Item Name
+            {
+                if (sortDirection == "asc")
+                {
+                    sumQ = sumQ
+                        .OrderBy(p => p.EventName);
+                }
+                else
+                {
+                    sumQ = sumQ
+                        .OrderByDescending(p => p.EventName);
+                }
+            }
+            //Set sort for next time
+            ViewData["sortField"] = sortField;
+            ViewData["sortDirection"] = sortDirection;
+
             //Get the inventory
-            var items = from i in _context.EventLogs
-                        orderby i.EventName, i.ItemName ascending
+            var items = from i in sumQ
+                            //orderby i.EventName, i.ItemName ascending
                         select new
                         {
                             EventName = i.EventName,
+                            ReservedDate = (DateTime)i.ReservedDate,
+                            ReturnDate = (DateTime)i.ReturnDate,
                             ItemName = i.ItemName,
                             Quantity = i.Quantity,
-                            //LogDate = i.LogDate
+                            Location = i.Location
                         };
+
             //How many rows?
             int numRows = items.Count();
 
@@ -1718,7 +2951,12 @@ namespace CAAMarketing.Controllers
                     workSheet.Cells[3, 1].LoadFromCollection(items, true);
 
                     //Style fee column for quantity
-                    workSheet.Column(3).Style.Numberformat.Format = "###,###,##0";
+                    workSheet.Column(6).Style.Numberformat.Format = "###,###,##0";
+
+                    //Style 4th column for dates (ReservedDate)
+                    workSheet.Column(2).Style.Numberformat.Format = "yyyy-mm-dd";
+                    //Style 5th column for dates (ReturnDate)
+                    workSheet.Column(3).Style.Numberformat.Format = "yyyy-mm-dd";
 
                     ////Style fee column for currency
                     //workSheet.Column(3).Style.Numberformat.Format = "$###,###,##0.00";
@@ -1728,39 +2966,60 @@ namespace CAAMarketing.Controllers
                     workSheet.Cells[4, 1, numRows + 3, 1].Style.Font.Bold = true;
 
                     //Make Item Quantity Bold/Colour coded
-                    workSheet.Cells[4, 3, numRows + 3, 3].Style.Font.Bold = true;
-                    var item = from i in _context.EventLogs
-                               orderby i.EventName, i.ItemName ascending
-                               select i.Quantity;
-                    int row = 4;
-                    foreach (var qty in item)
+                    workSheet.Cells[4, 5, numRows + 3, 5].Style.Font.Bold = true;
+                    //var item = from i in sumQ
+                    //           orderby i.EventName, i.ItemName ascending
+                    //           select i.Quantity;
+                    //int row = 4;
+                    //foreach (var qty in item)
+                    //{
+                    //    if (row <= (numRows + 3))
+                    //    {
+                    //        if (qty == 0)
+                    //        {
+                    //            workSheet.Cells[row, 3].Style.Font.Color.SetColor(Color.Red);
+                    //            row++;
+                    //        }
+                    //        else if ((qty <= 10) && (qty > 0))
+                    //        {
+                    //            workSheet.Cells[row, 3].Style.Font.Color.SetColor(Color.Orange);
+                    //            row++;
+                    //        }
+                    //        else if (qty > 10)
+                    //        {
+                    //            workSheet.Cells[row, 3].Style.Font.Color.SetColor(Color.Green);
+                    //            row++;
+                    //        }
+                    //    }
+                    //    else
+                    //    {
+                    //        break;
+                    //    }
+                    //}
+
+                    //Note: these are fine if you are only 'doing' one thing to the range of cells.
+                    //Otherwise you should USE a range object for efficiency
+                    //Total Cost for all Items in Inventory
+                    //workSheet.Cells[4, 4, numRows + 3, 5].Calculate();
+                    using (ExcelRange totalQty = workSheet.Cells[numRows + 4, 5])//
                     {
-                        if (row <= (numRows + 3))
-                        {
-                            if (qty == 0)
-                            {
-                                workSheet.Cells[row, 3].Style.Font.Color.SetColor(Color.Red);
-                                row++;
-                            }
-                            else if ((qty <= 10) && (qty > 0))
-                            {
-                                workSheet.Cells[row, 3].Style.Font.Color.SetColor(Color.Orange);
-                                row++;
-                            }
-                            else if (qty > 10)
-                            {
-                                workSheet.Cells[row, 3].Style.Font.Color.SetColor(Color.Green);
-                                row++;
-                            }
-                        }
-                        else
-                        {
-                            break;
-                        }
+                        //Total Cost Text
+                        var rangeName = workSheet.Cells[numRows + 4, 3, numRows + 4, 4];
+                        rangeName.Value = "Total Quantity:";
+                        rangeName.Style.Font.Bold = true;
+                        rangeName.Merge = true;
+                        rangeName.Style.HorizontalAlignment = ExcelHorizontalAlignment.Right;
+                        //Total Cost Sum - get cost * qty for each row
+                        totalQty.Formula = "Sum(" + (workSheet.Cells[4, 5].Address) + ":" + workSheet.Cells[numRows + 3, 5].Address + ")";
+                        totalQty.Style.Font.Bold = true;
+                        totalQty.Style.Numberformat.Format = "###,###,##0";
+                        var range = workSheet.Cells[numRows + 4, 5, numRows + 4, 6];
+                        range.Merge = true;
+                        range.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
                     }
 
                     //Set Style and backgound colour of headings
-                    using (ExcelRange headings = workSheet.Cells[3, 1, 3, 3])
+                    using (ExcelRange headings = workSheet.Cells[3, 1, 3, 6])
                     {
                         headings.Style.Font.Bold = true;
                         var fill = headings.Style.Fill;
@@ -1775,7 +3034,7 @@ namespace CAAMarketing.Controllers
 
                     //Add a title and timestamp at the top of the report
                     workSheet.Cells[1, 1].Value = "Inventory Events Report";
-                    using (ExcelRange Rng = workSheet.Cells[1, 1, 1, 3])
+                    using (ExcelRange Rng = workSheet.Cells[1, 1, 1, 6])
                     {
                         Rng.Merge = true; //Merge columns start and end range
                         Rng.Style.Font.Bold = true; //Font should be bold
@@ -1787,7 +3046,7 @@ namespace CAAMarketing.Controllers
                     DateTime utcDate = DateTime.UtcNow;
                     TimeZoneInfo esTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time");
                     DateTime localDate = TimeZoneInfo.ConvertTimeFromUtc(utcDate, esTimeZone);
-                    using (ExcelRange Rng = workSheet.Cells[2, 3])
+                    using (ExcelRange Rng = workSheet.Cells[2, 6])
                     {
                         Rng.Value = "Created: " + localDate.ToShortTimeString() + " on " +
                             localDate.ToShortDateString();
@@ -1964,6 +3223,99 @@ namespace CAAMarketing.Controllers
             return RedirectToAction("Index", "Items");
         }
 
+        ////for full audit
+        //public async Task<PartialViewResult> ItemAuditHistory(int id)
+        //{
+        //    const string primaryEntity = "Inventory";
+        //    //Get audit data 
+        //    string pkFilter = "\"ID\":" + id.ToString();
+        //    string fKFilter = "\"" + primaryEntity + "ID\":" + id.ToString();
+        //    var audits = await _context.AuditLogs
+        //        .Where(a => (a.EntityName == primaryEntity && a.PrimaryKey.Contains(pkFilter))
+        //                || a.PrimaryKey.Contains(fKFilter)
+        //                || a.ForeignKeys.Contains(fKFilter)
+        //                || a.OldValues.Contains(fKFilter)
+        //                || a.NewValues.Contains(fKFilter))
+        //        .ToListAsync();
+
+        //    List<AuditRecordVM> auditRecords = new List<AuditRecordVM>();
+        //    if (audits.Count > 0)
+        //    {
+        //        foreach (var a in audits)
+        //        {
+        //            AuditRecordVM ar = a.ToAuditRecord();
+
+        //            //Get the collection of keys
+        //            Dictionary<string, string> primaryKeys = JsonConvert.DeserializeObject<Dictionary<string, string>>(a.PrimaryKey + String.Empty);
+        //            //Get the collection of foreign keys
+        //            Dictionary<string, string> foreignKeys = JsonConvert.DeserializeObject<Dictionary<string, string>>(a.ForeignKeys + String.Empty);
+
+        //            if (ar.Type == "Updated")
+        //            {
+        //                //Here is where we will handle changes to any "loaded" entities related to
+        //                //the primary entity that have properties to track.  You will need a "if" for each one.
+
+        //                if (ar.Entity == primaryEntity)//Audit changes to the actual primary entity
+        //                {
+        //                    ar.Type += " " + primaryEntity;
+        //                    //Update to the primary entity so lookup all the foreign keys 
+        //                    //Go and get each "lookup" Value.  Only one in this case.
+        //                    foreach (var value in ar.AuditValues)
+        //                    {
+        //                        if (value.PropertyName == "ItemID")
+        //                        {
+        //                            Item item = await _context.Items.FindAsync(int.Parse(value.OldValue));
+        //                            value.OldValue = (item != null) ? item.Name : "Deleted Item";
+        //                            item = await _context.Items.FindAsync(int.Parse(value.NewValue));
+        //                            value.NewValue = (item != null) ? item.Name : "Deleted Item";
+        //                            value.PropertyName = "Item";
+        //                        }
+        //                        else if (value.PropertyName == "LocationID")
+        //                        {
+        //                            Location locations = await _context.Locations.FindAsync(int.Parse(value.OldValue));
+        //                            value.OldValue = (locations != null) ? locations.Name : "Deleted Location";
+        //                            locations = await _context.Locations.FindAsync(int.Parse(value.NewValue));
+        //                            value.NewValue = (locations != null) ? locations.Name : "Deleted Location";
+        //                            value.PropertyName = "Location";
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //            else if (ar.Type == "Added" || ar.Type == "Removed")
+        //            {
+        //                //In this section we will handle when entities are added or 
+        //                //removed in relation to the primary entity.
+
+        //                //Get the values from either Old or New
+        //                //Note: adding String.Empty prevents null
+        //                string values = ar.Type == "Added" ? a.NewValues + String.Empty : a.OldValues + String.Empty;
+        //                //Get the collection of values of the association entity
+        //                Dictionary<string, string> allValues = JsonConvert.DeserializeObject<Dictionary<string, string>>(values + String.Empty);
+
+        //                //Modify the Type of audit and include some details about the related object
+        //                string newComment = "";
+        //                //Check to see if it is an uploaded document and show the name
+        //                if (ar.Entity == "Inventory")
+        //                {
+        //                    if (int.TryParse(allValues["LocationID"]?.ToString(), out int locationID))
+        //                    {
+        //                        Location l = await _context.Locations.FindAsync(locationID);
+        //                        newComment += (l != null) ? " Inventory (Location: " + l.Name : " Item (Deleted Location";
+        //                    }
+        //                    if (int.TryParse(allValues["ItemID"]?.ToString(), out int itemID))
+        //                    {
+        //                        Item i = await _context.Items.FindAsync(itemID);
+        //                        string itemName = i.Name;
+        //                        newComment += (i != null) ? ", Item: " + itemName + ")" : ", Deleted Item)";
+        //                    }                       
+        //                }
+        //                ar.Type += " " + newComment;
+        //            }
+        //            auditRecords.Add(ar);
+        //        }
+        //    }
+        //    return PartialView("_AuditHistory", auditRecords.OrderByDescending(a => a.DateTime));
+        //}
 
         //Method for Viewing Inventory Report
         public async Task<IActionResult> RecoverAllSilencedNotif()
@@ -2029,7 +3381,7 @@ namespace CAAMarketing.Controllers
                     {
                         if (inventory.DismissNotification >= DateTime.Now || inventory.DismissNotification == null)
                         {
-                            
+
                             DateTime inventoryDismissNotification = inventory.DismissNotification ?? DateTime.MinValue; // Use DateTime.MinValue as a default value if inventory.DismissNotification is null
                             TimeSpan timeDifference = inventoryDismissNotification - DateTime.Now;
                             int daysApart = timeDifference.Days;
@@ -2046,7 +3398,7 @@ namespace CAAMarketing.Controllers
                             if (timeDifference.Days >= 0)
                             {
                                 records++;
-                                _toastNotification.AddInfoToastMessage(
+                                _toastNotification.AddWarningToastMessage(
                                 $@"Inventory for {inventory.Item.Name} at location {inventory.Location.Name} is running low. Current quantity: {inventory.Quantity}
                                     <a href='#' onclick='redirectToEdit({inventory.Item.ID}); return false;'>Edit</a> <br>***Silenced {daysApart} day(s) left***
                                     
@@ -2060,7 +3412,7 @@ namespace CAAMarketing.Controllers
                             else
                             {
                                 records++;
-                                _toastNotification.AddInfoToastMessage(
+                                _toastNotification.AddWarningToastMessage(
                                 $@"Inventory for {inventory.Item.Name} at location {inventory.Location.Name} is running low. Current quantity: {inventory.Quantity}
                                     <a href='#' onclick='redirectToEdit({inventory.Item.ID}); return false;'>Edit</a> <br>***Silenced Permanantly***
                                     
@@ -2114,7 +3466,7 @@ namespace CAAMarketing.Controllers
                         HttpContext.Session.SetString("ItemIdForPartialNotif" + itemID, inventory.ItemID.ToString());
                         norecords += 1;
                         inventory.IsLowInventory = true;
-                        _toastNotification.AddInfoToastMessage(
+                        _toastNotification.AddWarningToastMessage(
                             $@"Inventory for {inventory.Item.Name} at location {inventory.Location.Name} is running low. Current quantity: {inventory.Quantity}
                                 <a href='#' onclick='redirectToEdit({inventory.Item.ID}); return false;'>Edit</a>
                                 <br><br>Qiuck Actions:

@@ -1,0 +1,72 @@
+﻿@{
+    ViewBag.Title = "Scan Barcodes";
+}
+
+<h2>Scan Barcodes</h2>
+
+<div id="scanner-container"></div>
+<button id="start-scanner">Start Scanner</button>
+<button id="stop-scanner" style="display:none">Stop Scanner</button>
+
+<h3>Scanned UPC Codes:</h3>
+<ul id="scanned-upc-codes"></ul>
+<button id="get-printable-items">Get Printable Items</button>
+
+@section Scripts {
+    <script>
+        var scannedUpcCodes = [];
+
+        function addToScannedUpcCodes(upc) {
+            if (!scannedUpcCodes.includes(upc)) {
+                scannedUpcCodes.push(upc);
+                var listItem = document.createElement('li');
+                listItem.textContent = upc;
+                document.getElementById('scanned-upc-codes').appendChild(listItem);
+            }
+        }
+
+        document.getElementById('start-scanner').addEventListener('click', function () {
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: document.querySelector('#scanner-container')
+                },
+                decoder: {
+                    readers: ["ean_reader"]
+                }
+            }, function (err) {
+                if (err) {
+                    console.log(err);
+                    return;
+                }
+                console.log("Initialization finished. Ready to start");
+                Quagga.start();
+            });
+
+            Quagga.onDetected(function (result) {
+                var upc = result.codeResult.code;
+                addToScannedUpcCodes(upc);
+            });
+
+            this.style.display = 'none';
+            document.getElementById('stop-scanner').style.display = 'inline';
+        });
+
+        document.getElementById('stop-scanner').addEventListener('click', function () {
+            Quagga.stop();
+            this.style.display = 'none';
+            document.getElementById('start-scanner').style.display = 'inline';
+        });
+
+        document.getElementById('get-printable-items').addEventListener('click', function () {
+            if (scannedUpcCodes.length > 0) {
+                var url = '@Url.Action("GetPrintableItems", "YourController")';
+                url += '?upcCodes=' + scannedUpcCodes.join(',');
+                window.location.href = url;
+            } else {
+                alert('No UPC codes scanned.');
+            }
+        });
+    </script>
+}

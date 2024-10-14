@@ -16,7 +16,7 @@ namespace CAAMarketing.Models
         public string Description { get; set; }
 
 
-        [MinLength(10, ErrorMessage = "notes must be at least 10 characters.")]
+        [Display(Name = "Notes")]
         [DataType(DataType.MultilineText)]
         public string Notes { get; set; }
 
@@ -61,11 +61,13 @@ namespace CAAMarketing.Models
 
         public ICollection<MissingItemLog> MissingItemLogs { get; set; }
 
+        public ICollection<MissingTransitItem> MissingTransitItems { get; set; }
+
         public bool Archived { get; set; } = false;
 
         public ICollection<Receiving> Orders { get; set; }
 
-        [Display(Name = "Cost")]
+        [Display(Name = "Cost Per Item")]
         [Required(ErrorMessage = "You must enter a cost.")]
         [DataType(DataType.Currency)]
         public decimal Cost { get; set; }
@@ -78,6 +80,11 @@ namespace CAAMarketing.Models
 
         public bool isSlectedForEvent { get; set; } = false;
         public ICollection<ItemLocation> ItemLocations { get; set; } = new HashSet<ItemLocation>();
+
+        public string BarcodeSvg { get; set; }
+
+
+
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {

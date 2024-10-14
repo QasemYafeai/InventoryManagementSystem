@@ -7,6 +7,7 @@
 }
 
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.14.0/css/all.css" integrity="sha384-HzLeBuhoNPvSl5KYnjx0BT+WB0QEEqLprO+NBkkk5gbc67FTaL7XIGa2w1L0Xbgc" crossorigin="anonymous">
+<link rel="stylesheet" href="~/css/selectitemstrans.css" asp-append-version="true" />
 
 <div class="container">
     <ul class="progressbar">
@@ -17,7 +18,7 @@
             <p>Select Transfer Items</p>
         </li>
         <li >
-            <p>Choose Quantities/From Locations</p>
+            <p>Choose Quantities/Locations</p>
         </li>
     </ul>
 </div>
@@ -29,7 +30,7 @@
 
          <div/>
             <button class="btn btn-success @(ViewData["Filtering"])" type="button" data-bs-toggle="collapse" id="filterToggle" data-bs-target="#collapseFilter" aria-expanded="false" aria-controls="collapseFilter" title="Click this to filter/search">
-            <i class="material-icons">Filter/Search</i>
+            <i>Filter/Search</i>
         </button>
         <button type="button" class="btn btn-primary" title="Click this to Save/Continue" onclick="window.location.href='@Url.Action("ChooseItemQuantities", "InventoryTransfers")'">Save/Continue</button>
 
@@ -44,8 +45,8 @@
                     @Html.TextBox("SearchString", null, new { @class = "form-control" })
                     </div>
                     <div class="form-group col-md-4 align-self-end">
-                        <input type="submit" name="actionButton" value="Filter" title="click here to filter" class="btn btn-success" />
-                    <a asp-action="SelectItems" title="Click here to clear the filter" class="btn btn-outline-dark">Clear</a>
+                        <input type="submit" name="actionButton" value="Filter" title="click here to filter" class="btn-filter" />
+                    <a asp-action="SelectItems" title="Click here to clear the filter" class="btn-clear-barcode">Clear</a>
                     </div>
                 </div>
             </div>
@@ -53,35 +54,76 @@
 <p style="padding-top:10px;"></p>
 </form>
 
-
+   <!-- Help Button -->
+<div class="container my-3">
+    <button type="button" class="btn btn-info btn-color-Create" data-bs-toggle="modal" data-bs-target="#editSelectItemsHelpModal">
+        Need Help? Click here
+    </button>
+</div>
+<!-- Help Modal -->
+<div class="modal fade" id="editSelectItemsHelpModal" tabindex="-1" aria-labelledby="editSelectItemsHelpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editSelectItemsHelpModalLabel">How to Select Items</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <i class="bi bi-filter text-primary"></i> <strong>Filter/Search:</strong> Click the "Filter/Search" button to show the filtering options. You can filter the items by category or search for a specific item by name.
+                    </div>
+                    <div class="list-group-item">
+                        <i class="bi bi-save text-primary"></i> <strong>Save/Continue:</strong> Click the "Save/Continue" button to proceed to the next step after selecting the items for the event.
+                    </div>
+                    <div class="list-group-item">
+                        <i class="bi bi-arrow-left-square-fill text-danger"></i> <strong>Back to Overview:</strong> Click the "Back to Overview" button to leave the create Select Items page and return to the previous page.
+                    </div>
+                     <div class="list-group-item">
+                        <i class="bi bi-check-circle text-success"></i> <strong>Select Items:</strong> Click the "Select" button to choose the items you want to add to the Transfer.
+                    </div>
+                    <div class="list-group-item">
+                        <i class="bi bi-x-circle-fill text-danger"></i> <strong>Unselect Items:</strong> Click the "X" icon to remove the selected items from the Transfer.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div style="width:100%;">
-<form asp-action="SelectItems" method="get" style="float: left; width:1020px;">
+<form asp-action="SelectItems" method="get" class="tablect">
     
     <input type="hidden" name="sortDirection" value="@ViewData["sortDirection"]" />
     <input type="hidden" name="sortField" value="@ViewData["sortField"]" />
 
     
 <div class="table-responsive">
-    <div class="table-wrapper" style="width: 1000px;">
-<table class="table">
+    <div class="table-wrapper">
+<table class="table" style="text-align:left !important;">
     <thead class="thead-light">
         <tr>
             <th></th>
-            <th style="text-align:center">
-                <input type="submit" name="actionButton" title="click here to sort by event" value="Item" class="btn btn-link" />
+            <th style="padding-left:0;">
+                <input type="submit" name="actionButton" title="click here to sort by Transfer" value="Item" class="btn btn-link" />
             </th>
-            <th style="text-align:center">
+@*            <th style="padding-left:0;">
                 <input type="submit" name="actionButton" value="Supplier" title="click here to sort by Supplier" class="btn btn-link" />
-            </th>
+            </th>*@
+                          <th style="padding-left:0;">
+                <input type="submit" name="actionButton" value="UPC" title="click here to sort by UPC" class="btn btn-link" />
 
-            <th style="text-align:center">
+              </th>
+            <th style="padding-left:0;">
                 <input type="submit" name="actionButton" value="Locations" title="click here to sort by date" class="btn btn-link" />
             </th>
-            <th style="text-align:center">
-                <input type="submit" name="actionButton" value="Quantity" title="click here to sort by date" class="btn btn-link" />
+            <th style="padding-left:0;">
+                <input type="submit" name="actionButton" value="#" title="click here to sort by date" class="btn btn-link" />
             </th>
-            <th style="text-align:center"></th>
+            <th style="padding-left:0;"></th>
         </tr>
     </thead>
     <tbody>
@@ -108,10 +150,12 @@
                     <td>
                         @Html.DisplayFor(modelItem => item.Name)
                     </td>
-                    <td>
+@*                    <td>
                         @Html.DisplayFor(modelItem => item.Supplier.Name)
-                    </td>
-
+                    </td>*@
+                <td style="padding-left:0;">
+                  @Html.DisplayFor(modelItem => item.UPC)
+                </td>
                     <td>
                         @{
                             if(item.Inventories.Count() == 0)
@@ -148,7 +192,7 @@
                 {
                   <td>
                     <a href="#" onclick="selectItem(event, @item.ID)" title="Click this to select the item">
-                      <i class="fas fa-check-circle"></i> Select
+                      <i class="fas"></i> Select
                     </a>
                   </td>
                 } 
@@ -250,7 +294,7 @@
 
     $.ajax({
         type: "POST",
-        url: "/Events/SelectItems",
+        url: "/InventoryTransfers/SelectItems",
         data: { ItemID: itemId },
         success: function (response) {
              // Reload the page to show the updated data
@@ -276,7 +320,7 @@
 
     $.ajax({
         type: "POST",
-        url: "/Events/RemoveSelectedItems",
+        url: "/InventoryTransfers/RemoveSelectedItems",
         data: { ItemID: itemId },
         success: function (response) {
              // Reload the page to show the updated data
@@ -297,249 +341,3 @@
 }
 
 
-<style>
-    .container {
-        width: 100%;
-    }
-
-    .progressbar {
-        counter-reset: step;
-    }
-
-        .progressbar li {
-            list-style: none;
-            display: inline-block;
-            width: 30.33%;
-            position: relative;
-            text-align: center;
-            cursor: pointer;
-        }
-
-            .progressbar li:before {
-                content: counter(step);
-                counter-increment: step;
-                width: 30px;
-                height: 30px;
-                line-height: 30px;
-                border: 1px solid #ddd;
-                border-radius: 100%;
-                display: block;
-                text-align: center;
-                margin: 0 auto 10px auto;
-                background-color: #fff;
-            }
-
-            .progressbar li:after {
-                content: "";
-                position: absolute;
-                width: 100%;
-                height: 1px;
-                background-color: #ddd;
-                top: 15px;
-                left: -50%;
-                z-index: -1;
-            }
-
-            .progressbar li:first-child:after {
-                content: none;
-            }
-
-            .progressbar li.active {
-                color: green;
-            }
-
-                .progressbar li.active:before {
-                    border-color: green;
-                }
-
-                .progressbar li.active + li:after {
-                    background-color: green;
-                }
-
-    .select2 {
-        border-color: red !important;
-    }
-</style>
-
-<style>
-    #disabled-link {
-        color: gray;
-        cursor: not-allowed;
-        text-decoration: none;
-    }
-</style>
-
-<style>
-    .selectedItems {
-        position: inherit;
-        /* top: 150px; */
-        /*right: -50%;*/
-        margin-top: 30px;
-        width: 450px;
-        padding: 10px;
-        background-color: #f1f1f1;
-        border: 1px solid #ccc;
-    }
-
-
-        .selectedItems h2 {
-            font-size: 24px;
-            margin-bottom: 20px;
-        }
-
-
-        .selectedItems table {
-            margin-top: 20px;
-        }
-
-        .selectedItems img {
-            max-width: 60px;
-            max-height: 60px;
-            margin-right: 10px;
-        }
-
-        .selectedItems td {
-            vertical-align: middle;
-        }
-
-        .selectedItems a {
-            color: #007bff;
-            text-decoration: none;
-        }
-
-            .selectedItems a:hover {
-                text-decoration: underline;
-            }
-
-        .selectedItems input[type="submit"] {
-            font-size: 16px;
-            font-weight: normal;
-            padding: 0;
-            margin: 0;
-            border: none;
-            background-color: transparent;
-            color: #007bff;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-            .selectedItems input[type="submit"]:hover {
-                text-decoration: underline;
-            }
-
-
-    .selected-row {
-        background-color: rgba(0, 255, 0, 0.2);
-        transition: background-color 0.3s ease-in-out;
-    }
-</style>
-
-
-<style>
-    .table {
-        font-size: 16px;
-        font-family: Arial, sans-serif;
-        border-collapse: collapse;
-        width: 100%;
-    }
-
-        .table th {
-            background-color: #f2f2f2;
-            color: #333;
-            text-align: left;
-            padding: 12px;
-        }
-
-        .table td {
-            border-bottom: 1px solid #ddd;
-            padding: 8px;
-        }
-
-        /*    .table tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }*/
-
-        .table tr:not(.selected-row):hover {
-            background-color: #E8E8E8;
-        }
-
-        .table tr.selected-row:hover {
-            background-color: #50C878;
-        }
-
-
-    .padding-for-actions {
-        padding: 5px;
-    }
-
-    .disabled-link {
-        color: #aaa;
-    }
-</style>
-
-
-<style>
-    /* Style for the table header */
-    thead th {
-        background-color: #f2f2f2;
-        font-weight: bold;
-    }
-
-    /* Style for the table rows */
-    tbody tr {
-        background-color: #f9f9f9;
-    }
-
-
-
-    /* Style for the table cells */
-    td {
-        border: none;
-        vertical-align: middle;
-        padding: 10px;
-    }
-
-        /* Style for the table cell containing the item thumbnail */
-        td:first-child {
-            width: 80px;
-        }
-
-        /* Style for the table cell containing the item name */
-        td:nth-child(2) {
-            font-weight: bold;
-        }
-
-        /* Style for the table cell containing the "Select" link */
-        td:last-child {
-            text-align: center;
-        }
-
-    /* Style for the "Select" link */
-    .padding-for-actions {
-        cursor: pointer;
-        width: 40px;
-        height: 30px;
-        padding: 5px 10px;
-        border-radius: 5px;
-        /*background-color: #007bff;*/
-        color: #fff;
-        text-decoration: none;
-    }
-
-    /* Style for the "Select" link */
-    .padding-for-actions-check {
-        width: 40px;
-        height: 30px;
-        padding: 5px 10px;
-        border-radius: 5px;
-        /*background-color: #007bff;*/
-        color: #fff;
-        text-decoration: none;
-    }
-
-    .padding-for-actions:hover {
-        background-color: #0069d9;
-        color: #fff;
-    }
-
-</style>

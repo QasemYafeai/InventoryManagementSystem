@@ -16,8 +16,43 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="Views\Archives\Create.cshtml" />
+    <None Include="Views\Archives\Delete.cshtml" />
+    <None Include="Views\Archives\Details.cshtml" />
+    <None Include="Views\Archives\Edit.cshtml" />
+    <None Include="Views\Archives\Index.cshtml" />
+    <None Include="Views\Archives\TransferArchivesIndex.cshtml" />
+    <None Include="Views\Events\ChooseItemQuantities.cshtml" />
+    <None Include="Views\Events\ChooseItemQuantitiesEdit.cshtml" />
+    <None Include="Views\Events\Create.cshtml" />
+    <None Include="Views\Events\Delete.cshtml" />
+    <None Include="Views\Events\Details.cshtml" />
+    <None Include="Views\Events\Edit.cshtml" />
+    <None Include="Views\Events\EditOverview.cshtml" />
+    <None Include="Views\Events\EditSelectItems.cshtml" />
+    <None Include="Views\Events\Index.cshtml" />
+    <None Include="Views\Events\LogBackInMultiple.cshtml" />
+    <None Include="Views\Events\SelectItems.cshtml" />
     <None Include="Views\Home\Index.cshtml" />
     <None Include="Views\Home\Privacy.cshtml" />
+    <None Include="Views\InventoryTransfers\Archive.cshtml" />
+    <None Include="Views\InventoryTransfers\ChooseItemQuantities.cshtml" />
+    <None Include="Views\InventoryTransfers\ChooseItemQuantitiesEdit.cshtml" />
+    <None Include="Views\InventoryTransfers\ComfirmMultiple.cshtml" />
+    <None Include="Views\InventoryTransfers\Create.cshtml" />
+    <None Include="Views\InventoryTransfers\CreateMultipleTransfers.cshtml" />
+    <None Include="Views\InventoryTransfers\Delete.cshtml" />
+    <None Include="Views\InventoryTransfers\Details.cshtml" />
+    <None Include="Views\InventoryTransfers\Edit.cshtml" />
+    <None Include="Views\InventoryTransfers\EditOverview.cshtml" />
+    <None Include="Views\InventoryTransfers\EditSelectItems.cshtml" />
+    <None Include="Views\InventoryTransfers\Index.cshtml" />
+    <None Include="Views\InventoryTransfers\Recover.cshtml" />
+    <None Include="Views\InventoryTransfers\SelectItems.cshtml" />
+    <None Include="Views\InventoryTransfers\_addMissingItemTransferModal.cshtml" />
+    <None Include="Views\InventoryTransfers\_addTransitComfirmationModal.cshtml" />
+    <None Include="Views\InventoryTransfers\_MissingItemTransferCreate.cshtml" />
+    <None Include="Views\InventoryTransfers\_TransitComfirmationCreate.cshtml" />
     <None Include="wwwroot\js\toastr-master\.gitattributes" />
     <None Include="wwwroot\js\toastr-master\.gitignore" />
     <None Include="wwwroot\js\toastr-master\.jscsrc" />
@@ -90,25 +125,30 @@
     <PackageReference Include="AspNetCoreHero.ToastNotification" Version="1.1.0" />
     <PackageReference Include="DynamicLanguageRuntime" Version="1.3.3" />
     <PackageReference Include="EPPlus" Version="4.5.3.3" />
+    <PackageReference Include="GoogleAuthenticator" Version="3.0.0" />
+    <PackageReference Include="iTextSharp" Version="5.5.13.3" />
     <PackageReference Include="MailKit" Version="3.4.3" />
     <PackageReference Include="MappingGenerator" Version="1.22.3" />
+    <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.9" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="6.0.10" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="6.0.13" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="6.0.13" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.10" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.14" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.14">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.15" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.15">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="6.0.12" />
+    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="6.0.13" />
     <PackageReference Include="NToastNotify" Version="8.0.0" />
+    <PackageReference Include="ReportGenerator" Version="5.1.19" />
     <PackageReference Include="SkiaSharp" Version="2.88.3" />
     <PackageReference Include="SweetAlert" Version="1.0.0" />
     <PackageReference Include="Syncfusion.Blazor.Notifications" Version="20.4.0.52" />
     <PackageReference Include="ToastNotifications" Version="2.5.1" />
     <PackageReference Include="ToastNotifications.Messages" Version="2.5.1" />
     <PackageReference Include="toastr" Version="2.1.1" />
+    <PackageReference Include="ZXing.Net" Version="0.16.7" />
   </ItemGroup>
 
 </Project>

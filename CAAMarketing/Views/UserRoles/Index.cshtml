@@ -10,11 +10,25 @@
 </script>
 
 <form asp-action="Index" method="get">
-    <div class="container-fluid">
+    <div class="container-fluid ">
+        <!-- Help Section -->
+        <div class="d-flex justify-content-start mb-3">
+            <button type="button" class="btn btn-info btn-color-Create" data-bs-toggle="modal" data-bs-target="#userRolesPageHelpModal">
+                Need Help? Click here
+            </button>
+        </div>
         <div class="table-responsive">
             <div class="table-wrapper">
                 <div class="table-title d-flex justify-content-between align-items-center">
-                    <h2>User Role Assignments</h2>
+                    <h1>User Role</h1>
+                    <div class="col-xs-7">
+                        <div class="search-box">
+                            <div class="input-group">
+                                <input type="text" id="Usersearch" class="form-control" placeholder="Search by user Name">
+                                <span class="input-group-addon"><i class="material-icons">&#xE8B6;</i></span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <table class="table table-hover">
                     <tr>
@@ -42,7 +56,7 @@
                                 }
                             </td>
                             <td class="col-lg-2">
-                               <a asp-action="Edit" title="Click this to edit" asp-route-id="@item.Id" >Edit</a>
+                                <a asp-action="Edit" title="Click this to edit" asp-route-id="@item.Id">Edit</a>
 
                             </td>
                         </tr>
@@ -53,3 +67,50 @@
         </div>
     </div>
 </form>
+
+<!-- Help Modal -->
+<div class="modal fade" id="userRolesPageHelpModal" tabindex="-1" aria-labelledby="userRolesPageHelpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userRolesPageHelpModalLabel">How to use the User Roles page</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <i class="bi bi-search text-success"></i> <strong>Quick Search:</strong> Use the search box on the top-right corner to quickly search for users by their name. This allows you to find users without using any filters.
+                    </div>
+                    <div class="list-group-item">
+                        <i class="bi bi-pencil text-warning"></i> <strong>Edit User Roles:</strong> Click the "Edit" link next to a user's name to modify their role assignments.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        // Activate tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+
+        // Filter table rows based on searched term
+        $("#Usersearch").on("keyup", function () {
+            var term = $(this).val().toLowerCase();
+            $("table tbody tr:not(:first)").each(function () {
+                $row = $(this);
+                var name = $row.find("td:nth-child(1)").text().toLowerCase();
+                console.log(name);
+                if (name.search(term) < 0) {
+                    $row.hide();
+                } else {
+                    $row.show();
+                }
+            });
+        });
+    });
+</script>

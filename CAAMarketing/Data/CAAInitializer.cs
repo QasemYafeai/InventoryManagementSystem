@@ -11,10 +11,57 @@ using System.Diagnostics;
 
 public static class CAAInitializer
 {
+    private static long GenerateUniqueUPC(HashSet<long> upcSet)
+    {
+        Random random = new Random();
+        long upc;
+        do
+        {
+            string prefix = "1";
+            string manufacturerCode = random.Next(100000, 999999).ToString();
+            string productCode = random.Next(10000, 99999).ToString();
+            string upcString = prefix + manufacturerCode + productCode;
+            int checkDigit = CalculateUPCChecksum(upcString);
+            upcString = upcString + checkDigit.ToString();
+            upc = long.Parse(upcString);
+        } while (upcSet.Contains(upc));
+        upcSet.Add(upc);
+        return upc;
+    }
+
+    private static int CalculateUPCChecksum(string upcString)
+    {
+        int sumOdd = 0;
+        int sumEven = 0;
+
+        for (int i = 0; i < upcString.Length; i++)
+        {
+            int digit = int.Parse(upcString[i].ToString());
+
+            if (i % 2 == 0) // Even position (0-based index)
+            {
+                sumEven += digit;
+            }
+            else // Odd position
+            {
+                sumOdd += digit;
+            }
+        }
+
+        int totalSum = sumOdd * 3 + sumEven;
+        int mod = totalSum % 10;
+
+        return mod == 0 ? 0 : 10 - mod;
+    }
+
+
+
     public static void Seed(IApplicationBuilder applicationBuilder)
     {
         CAAContext context = applicationBuilder.ApplicationServices.CreateScope()
             .ServiceProvider.GetRequiredService<CAAContext>();
+
+        
 
         try
         {
@@ -26,6 +73,7 @@ public static class CAAInitializer
             //To randomly generate data
             Random rd = new Random();
 
+
             if (!context.Employees.Any())
             {
                 context.Employees.AddRange(
@@ -34,21 +82,32 @@ public static class CAAInitializer
                      FirstName = "Mahmoud",
                      LastName = "Hachem",
                      Phone = "2891231231",
-                     Email = "mhachem12@outlook.com"
+                     Email = "mhachem12@outlook.com",
+                     Password = "Admins@123"
                  },
                  new Employee
                  {
-                     FirstName = "Fred",
-                     LastName = "Flintstone",
+                     FirstName = "Moayed",
+                     LastName = "Mahmoud",
+                     Phone = "9056509894",
+                     Email = "moayedcaaproject@outlook.com",
+                     Password = "Admins@1234"
+                 },
+                 new Employee
+                 {
+                     FirstName = "Jordan",
+                     LastName = "Knol",
                      Phone = "2891231231",
-                     Email = "super@caaniagara.ca"
+                     Email = "super@caaniagara.ca",
+                     Password = "Supers@123"
                  },
                  new Employee
                  {
                      FirstName = "Betty",
                      LastName = "Rubble",
                      Phone = "2891231231",
-                     Email = "Employee@caaniagara.ca"
+                     Email = "Employee@caaniagara.ca",
+                     Password = "Emp@123"
                  });
 
                 context.SaveChanges();
@@ -171,6 +230,8 @@ public static class CAAInitializer
             }
 
             // Look for any Doctors.  Since we can't have patients without Doctors.
+            HashSet<long> upcSet = new HashSet<long>();
+
             if (!context.Items.Any())
             {
                 context.Items.AddRange(
@@ -180,7 +241,7 @@ public static class CAAInitializer
                     Description = "Pens For CAA",
                     Notes = "Pens used for writing",
                     CategoryID = 3,
-                    UPC = rd.Next(10000000, 99999999),
+                    UPC = GenerateUniqueUPC(upcSet),
                     DateReceived = DateTime.Parse("2022/01/20"),
                     SupplierID = 1,
                     EmployeeID = 1,
@@ -192,7 +253,7 @@ public static class CAAInitializer
                     Description = "Sunglasses for CAA",
                     Notes = "Sunglasses used for writing",
                     CategoryID = 5,
-                    UPC = rd.Next(10000000, 99999999),
+                    UPC = GenerateUniqueUPC(upcSet),
                     DateReceived = DateTime.Parse("2022/01/20"),
                     SupplierID = 2,
                     EmployeeID = 3,
@@ -205,7 +266,7 @@ public static class CAAInitializer
                     Description = "Backpacks that comes in many different colors",
                     Notes = "Blue, Pink, Black",
                     CategoryID = 2,
-                    UPC = rd.Next(10000000, 99999999),
+                    UPC = GenerateUniqueUPC(upcSet),
                     DateReceived = DateTime.Parse("2022/01/20"),
                     SupplierID = 4,
                     EmployeeID = 2,
@@ -213,11 +274,11 @@ public static class CAAInitializer
                 },
                 new Item
                 {
-                    Name = "Carry-on Bag Nike",
+                    Name = "Carry on Bag Nike",
                     Description = "Bags that comes in many different colors",
                     Notes = "Amber, Black, Grey",
                     CategoryID = 1,
-                    UPC = rd.Next(10000000, 99999999),
+                    UPC = GenerateUniqueUPC(upcSet),
                     DateReceived = DateTime.Parse("2022/01/20"),
                     SupplierID = 4,
                     EmployeeID = 1,
@@ -229,7 +290,7 @@ public static class CAAInitializer
                     Description = "Scrapper for snow/ice remove on vehicles",
                     Notes = "Black, Grey, Blue",
                     CategoryID = 6,
-                    UPC = rd.Next(10000000, 99999999),
+                    UPC = GenerateUniqueUPC(upcSet),
                     DateReceived = DateTime.Parse("2022/01/20"),
                     SupplierID = 4,
                     EmployeeID = 2,
@@ -241,7 +302,7 @@ public static class CAAInitializer
                     Description = "Used for storing Water",
                     Notes = "Comes in Black Only",
                     CategoryID = 4,
-                    UPC = rd.Next(10000000, 99999999),
+                    UPC = GenerateUniqueUPC(upcSet),
                     DateReceived = DateTime.Parse("2022/01/20"),
                     SupplierID = 5,
                     EmployeeID = 3,
@@ -253,7 +314,7 @@ public static class CAAInitializer
                     Description = "Used for storing Laptops",
                     Notes = "Comes in Grey Only",
                     CategoryID = 1,
-                    UPC = rd.Next(10000000, 99999999),
+                    UPC = GenerateUniqueUPC(upcSet),
                     DateReceived = DateTime.Parse("2022/01/20"),
                     SupplierID = 4,
                     EmployeeID = 1,
@@ -265,7 +326,7 @@ public static class CAAInitializer
                     Description = "Wallet that sticks to the back of your phone.",
                     Notes = "Comes in Black, Blue and Red",
                     CategoryID = 7,
-                    UPC = rd.Next(10000000, 99999999),
+                    UPC = GenerateUniqueUPC(upcSet),
                     DateReceived = DateTime.Parse("2022/01/20"),
                     SupplierID = 6,
                     EmployeeID = 2,
@@ -277,7 +338,7 @@ public static class CAAInitializer
                     Description = "Shirt with CAA Logo, Address, Phone Number and more.",
                     Notes = "Comes in Blue, Grey, Black.",
                     CategoryID = 8,
-                    UPC = rd.Next(10000000, 99999999),
+                    UPC = GenerateUniqueUPC(upcSet),
                     DateReceived = DateTime.Parse("2022/01/20"),
                     SupplierID = 4,
                     EmployeeID = 3,
@@ -289,7 +350,7 @@ public static class CAAInitializer
                     Description = "CAA Sticker that can be applied to any surface.",
                     Notes = "Comes in CAA colours.",
                     CategoryID = 7,
-                    UPC = rd.Next(10000000, 99999999),
+                    UPC = GenerateUniqueUPC(upcSet),
                     DateReceived = DateTime.Parse("2022/01/20"),
                     SupplierID = 7,
                     EmployeeID = 3,
@@ -301,11 +362,10 @@ public static class CAAInitializer
                     Description = "Key Chain with CAA logo to attached to someones Car Keys.",
                     Notes = "Comes in CAA colours.",
                     CategoryID = 7,
-                    UPC =  rd.Next(10000000, 99999999),
+                    UPC = GenerateUniqueUPC(upcSet),
                     DateReceived = DateTime.Parse("2022/01/20"),
                     SupplierID = 7,
                     EmployeeID = 1,
-                    Archived = true,
                     ItemInvCreated = true
 
                 });
@@ -404,7 +464,7 @@ public static class CAAInitializer
                     DateMade = DateTime.Now,
                     DeliveryDate = DateTime.Parse("2022/03/20"),
                     Cost = 45,
-                    ItemID = context.Items.FirstOrDefault(d => d.Name == "Carry-on Bag Nike").ID,
+                    ItemID = context.Items.FirstOrDefault(d => d.Name == "Carry on Bag Nike").ID,
                     LocationID = context.Locations.FirstOrDefault(d => d.Name == "Niagara Falls").Id,
                 },
                 new Receiving
@@ -460,17 +520,17 @@ public static class CAAInitializer
                 new ItemLocation
                 {
                     LocationID = context.Locations.FirstOrDefault(d => d.Name == "Welland").Id,
-                    ItemID = context.Items.FirstOrDefault(d => d.Name == "Carry-on Bag Nike").ID
+                    ItemID = context.Items.FirstOrDefault(d => d.Name == "Carry on Bag Nike").ID
                 },
                 new ItemLocation
                 {
                     LocationID = context.Locations.FirstOrDefault(d => d.Name == "Thorold").Id,
-                    ItemID = context.Items.FirstOrDefault(d => d.Name == "Carry-on Bag Nike").ID
+                    ItemID = context.Items.FirstOrDefault(d => d.Name == "Carry on Bag Nike").ID
                 },
                 new ItemLocation
                 {
                     LocationID = context.Locations.FirstOrDefault(d => d.Name == "Niagara Falls").Id,
-                    ItemID = context.Items.FirstOrDefault(d => d.Name == "Carry-on Bag Nike").ID
+                    ItemID = context.Items.FirstOrDefault(d => d.Name == "Carry on Bag Nike").ID
                 });
                 context.SaveChanges();
             }

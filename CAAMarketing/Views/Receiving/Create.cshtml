@@ -4,6 +4,7 @@
 @{
     ViewData["Title"] = "Create";
 }
+<link rel="stylesheet" href="/css/RecievingCreate.css" asp-append-version="true" />
 
 <div class="container">
     <ul class="progressbar">
@@ -14,7 +15,9 @@
             <p>Receive Inventory</p>
         </li>
         <li>
-            <p>OverView</p>
+            <p class ="active">
+                Overview
+            </pc>
         </li>
     </ul>
 </div>
@@ -25,42 +28,48 @@
 <div class="cont">
     <div class="edtext">
         <center><h3>Step 2: </h3></center>
-        <h1>Inventory/Recieving</h1><small style="color: red">*Red fields are required</small>
+        <h1>Inventory/Recieving</h1><small style="color: red">*required fields</small>
         <hr />
         <div class="row">
             <div class="col-md-12">
                 <form asp-action="Create">
-                    
+
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                     <div class="form-group">
-                        <label asp-for="ItemID" class="control-label" hidden="hidden"></label>
+                        <label asp-for="ItemID" class="control-label " hidden="hidden"></label>
                         <select asp-for="ItemID" class="form-control" asp-items="ViewBag.ItemID" hidden="hidden"></select>
                     </div>
                     <div class="form-group">
-                        <label asp-for="Quantity" class="control-label"></label>
-                        <input asp-for="Quantity" class="form-control" required style="border-color: red" />
+                        <label asp-for="Quantity" class="control-label required-label"></label>
+                        <input asp-for="Quantity" class="form-control" required />
                         <span asp-validation-for="Quantity" class="text-danger"></span>
                     </div>
-                    <div class="form-group">
-                        <label asp-for="DateMade" class="control-label"></label>
-                        <input asp-for="DateMade" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")" required style="border-color: red" />
+
+@*                    <div class="form-group">
+                        <label class="control-label required-label">Low Item Threshold:</label>
+                        <input name="LowItemThreshold" class="form-control" value=""/>
+                    </div>*@
+@*                    <div class="form-group">
+                        <label asp-for="DateMade" class="control-label required-label"></label>
+                        <input asp-for="DateMade" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")" disabled readonly/>
                         <span asp-validation-for="DateMade" class="text-danger"></span>
-                    </div>
+                    </div>*@
+
                     <div class="form-group">
-                        <label asp-for="DeliveryDate" class="control-label"></label>
-                        <input asp-for="DeliveryDate" class="form-control" required style="border-color: red" />
+                        <label asp-for="DeliveryDate" class="control-label required-label"></label>
+                        <input asp-for="DeliveryDate" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
                         <span asp-validation-for="DeliveryDate" class="text-danger"></span>
                     </div>
                     <div class="form-group">
-                        <label asp-for="Cost" class="control-label"></label>
-                        <input asp-for="Cost" class="form-control" required style="border-color: red" />
+                        <label asp-for="Cost" class="control-label required-label"></label>
+                        <input asp-for="Cost" class="form-control" required />
                         <span asp-validation-for="Cost" class="text-danger"></span>
                     </div>
                     <div class="form-group">
-                        <label asp-for="LocationID" class="control-label"></label>
-                        <select asp-for="LocationID" class="form-control" asp-items="ViewBag.LocationID" required style="border-color: red"></select>
+                        <label asp-for="LocationID" class="control-label required-label"></label>
+                        <select asp-for="LocationID" class="form-control" asp-items="ViewBag.LocationID"></select>
                     </div>
-                    
+
 
                     <div class="form-group">
                         @{
@@ -72,15 +81,18 @@
                                 ItemIDForSkip = Convert.ToInt32(GetItemIDForOrderSkip);
                             }
                         }
-                        <a class="btn btn-primary" id="create-order-btn">Create</a>
-                        <a asp-action="Index" asp-controller="OrderItems" title="Click this to go to details" class="padding-for-actions" asp-route-ItemID="@ItemIDForSkip"> Skip   </a> |
-                        <div class="tooltip"> <a asp-controller="Inventories" asp-action="Index" > <img src="~/images/icons8-go-back-24.png" alt="Exit Icon"/> <span class="tooltiptext">Exit</span></a> </div>
+                        <div style="text-align:center; margin-top: 10px">
+                            <input type="submit" value="Create" class="btn-submit" />
+                            <a asp-action="Index" asp-controller="OrderItems" title="Click this to skip" class="padding-for-actions" asp-route-ItemID="@ItemIDForSkip"> Skip   </a> |
+                            <div class="tooltip"> <a asp-controller="Inventories" asp-action="Index"> <img src="~/images/icons8-go-back-24.png" alt="Exit Icon" /> <span class="tooltiptext">Exit</span></a> </div>
+                        </div>
+
                     </div>
                 </form>
             </div>
         </div>
     </div>
-</div> 
+</div>
 
 
 @section Scripts {
@@ -112,66 +124,7 @@
 }
 
 
-    <style>
-        .container {
-            width: 100%;
-        }
 
-        .progressbar {
-            counter-reset: step;
-        }
-
-            .progressbar li {
-                list-style: none;
-                display: inline-block;
-                width: 30.33%;
-                position: relative;
-                text-align: center;
-                cursor: pointer;
-            }
-
-                .progressbar li:before {
-                    content: counter(step);
-                    counter-increment: step;
-                    width: 30px;
-                    height: 30px;
-                    line-height: 30px;
-                    border: 1px solid #ddd;
-                    border-radius: 100%;
-                    display: block;
-                    text-align: center;
-                    margin: 0 auto 10px auto;
-                    background-color: #fff;
-                }
-
-                .progressbar li:after {
-                    content: "";
-                    position: absolute;
-                    width: 100%;
-                    height: 1px;
-                    background-color: #ddd;
-                    top: 15px;
-                    left: -50%;
-                    z-index: -1;
-                }
-
-                .progressbar li:first-child:after {
-                    content: none;
-                }
-
-                .progressbar li.active {
-                    color: green;
-                }
-
-                    .progressbar li.active:before {
-                        border-color: green;
-                    }
-
-                    .progressbar li.active + li:after {
-                        background-color: green;
-                    }
-
-        }</style>
 
 <div class="modal fade" id="create-order-modal" tabindex="-1" role="dialog" aria-labelledby="create-order-modal-title" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg" role="document">

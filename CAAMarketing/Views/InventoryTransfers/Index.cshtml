@@ -1,104 +1,158 @@
-﻿@model IEnumerable<CAAMarketing.Models.InventoryTransfer>
+﻿@model IEnumerable<CAAMarketing.Models.Transfer>
+@inject IHttpContextAccessor HttpContextAccessor
 
 @{
     ViewData["Title"] = "Index";
 }
-<a asp-action="CreateMultipleTransfers" title="Click here to create a new Transfer" class="btn btn-primary btn-color-Create">Create New Transfer</a>
+<partial name="_addTransitComfirmationModal" />
 <form asp-action="Index" method="get">
 
     <input type="hidden" name="sortDirection" value="@ViewData["sortDirection"]" />
     <input type="hidden" name="sortField" value="@ViewData["sortField"]" />
-    
+    <!-- Help Section -->
+    <div class="container my-3">
+        <button type="button" class="btn btn-info btn-color-Create" data-bs-toggle="modal" data-bs-target="#transferHelpModal">
+            Need Help? Click here
+        </button>
+
+        <!-- Help Modal -->
+        <div class="modal fade" id="transferHelpModal" tabindex="-1" aria-labelledby="transferHelpModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="transferHelpModalLabel">How to use the Transfer page</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="list-group">
+                            <div class="list-group-item">
+                                <i class="bi bi-plus-circle-fill text-primary"></i> <strong>Create New Transfer:</strong> Click the "Create New Transfer" button to add a new transfer.
+                            </div>
+                            <div class="list-group-item">
+                                <i class="bi bi-search text-success"></i> <strong>Search:</strong> Use the "Search box" to search for transfers by item Name Or use the Filter/Search to have more options.
+                            </div>
+                            <div class="list-group-item">
+                                <i class="bi bi-arrow-up-down text-warning"></i> <strong>Sorting:</strong> Click on the column headers (Title, Transfer Date, Items Transferred, etc.) to sort the transfers by the respective criteria.
+                            </div>
+                            <div class="list-group-item">
+                                <i class="bi bi-pencil-square text-info"></i> <strong>Edit Transfer:</strong> Click the "Edit" link to modify the details of a transfer.
+                            </div>
+                            <div class="list-group-item">
+                                <i class="bi bi-info-square text-secondary"></i> <strong>View Transfer Details:</strong> Click the "Details" link to view more information about a transfer.
+                            </div>
+                            <div class="list-group-item">
+                                <i class="bi bi-trash text-danger"></i> <strong>Delete Transfer:</strong> Click the "Delete" link to remove a transfer.
+                            </div>
+                            <div class="list-group-item">
+                                <i class="bi bi-check2-square text-primary"></i> <strong>Confirm Transit:</strong> If not all items are logged back in, click the "Confirm Transit" link to confirm the items' transit.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="form-horizontal">
         <button class="btn btn-success @(ViewData["Filtering"])" type="button" data-bs-toggle="collapse" id="filterToggle" data-bs-target="#collapseFilter" aria-expanded="false" aria-controls="collapseFilter" title="Click this to filter/search">
-            <i class="material-icons">Filter/Search</i>
+            <i>Filter/Search</i>
         </button>
     </div>
 
-   
+
 
     <div class="collapse" id="collapseFilter">
         <div class="card card-body">
-                        
-                            <div class="card-body filter-content">
+
+            <div class="card-body filter-content">
                 <div class="row">
                     <div class="form-group col-md-4">
-                                
-                                    <label class="control-label">Filter by From-Location:</label>
-                                    @Html.DropDownList("FromLocationID", null, "All From-Locations", htmlAttributes: new { @class = "form-control" })
-                                </div>
+
+                        <label class="control-label">Filter by From-Location:</label>
+                        @Html.DropDownList("FromLocationID", null, "All From-Locations", htmlAttributes: new { @class = "form-control" })
+                    </div>
                     <div class="form-group col-md-4">
-                                    <label class="control-label">Filter by To-Location:</label>
-                                    @Html.DropDownList("ToLocationId", null, "All To-Locations", htmlAttributes: new { @class = "form-control" })
-                                </div>
-                    <div class="form-group col-md-4">
-                                    <label class="control-label">Search Item Name OR UPC:</label>
-                                    @Html.TextBox("SearchString", null, new { @class = "form-control" })
-                                </div>
-                                <div class="form-group col-md-4 align-self-end">
-                                    <input type="submit" name="actionButton" value="Filter" class="btn btn-success" />
-                                    <a asp-action="Index" class="btn btn-outline-dark">Clear</a>
-                                </div>
-                                </div>
-                      </div>
+                        <label class="control-label">Filter by To-Location:</label>
+                        @Html.DropDownList("ToLocationId", null, "All To-Locations", htmlAttributes: new { @class = "form-control" })
+                    </div>
+                    @*<div class="form-group col-md-4">
+                        <label class="control-label">Search Item Name OR UPC:</label>
+                        @Html.TextBox("SearchString", null, new { @class = "form-control" })
+                    </div>*@
+                    <div class="form-group col-md-4 align-self-end">
+                        <input type="submit" name="actionButton" value="Filter" class="btn-filter" />
+                        <a asp-action="Index" class="btn-clear-barcode">Clear</a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-            <div class="container-fluid">
+    <div class="container-fluid">
         <div class="table-responsive">
             <div class="table-wrapper">
                 <div class="table-title d-flex justify-content-between align-items-center">
-                    <h1>Inventory Transfer</h1>
+                    <h1>Transfer</h1>
+                    <div class="col-xs-7">
+                        <a asp-action="CreateMultipleTransfers" title="Click here to create a new Transfer" class="btn btn-primary btn-color-Create">
+                                <i class="material-icons">&#xE147;</i>
+                                <span>Create New Transfer</span>
+                            </a>
+
+                            <div class="search-box">
+                            <div class="input-group">
+                                <input type="text" id="Transfersearch" class="form-control" placeholder="Search by Item Name">
+                                <span class="input-group-addon"><i class="material-icons">&#xE8B6;</i></span>
+                            </div>
+                        </div>
+                        </div>
                 </div>
                 <table class="table table-hover">
                     <thead class="thead-light">
-                    <tr>
-                        <th>
-                            @Html.DisplayNameFor(model => model.Item.Name)
-                        </th>
-                        <th>
-                            @Html.DisplayNameFor(model => model.FromLocation.Name)
-                        </th>
-                        <th>
-                            @Html.DisplayNameFor(model => model.ToLocation.Name)
-                        </th>
-                        <th>
-                            @Html.DisplayNameFor(model => model.Quantity)
-                        </th>
-                        <th>
-                            @Html.DisplayNameFor(model => model.TransferDate)
-                        </th>
+                        <tr>
+                            <th>
+                                <input type="submit" name="actionButton" value="Title" title="click here to sort by title" class="btn btn-link" />
+                            </th>
+                            <th>
+                                <input type="submit" name="actionButton" value="Transfer Date" title="click here to sort by transfer date" class="btn btn-link" />
+                            </th>
                             <th>
                                 Received
                             </th>
-                        <th>
-                            @Html.DisplayNameFor(model => model.Item.Archived)
-                        </th>
-                        <th></th>
-                    </tr>
+                            <th>
+                                <input type="submit" name="actionButton" value="Items" title="click here to sort by item names" class="btn btn-link" />
+                            </th>
+                            <th>
+                                <input type="submit" name="actionButton" value="From Location" title="click here to sort by from lcoation" class="btn btn-link" />
+                            </th>
+                            <th>
+                                <input type="submit" name="actionButton" value="To Location" title="click here to sort by to location" class="btn btn-link" />
+                            </th>
+                            <th>
+                                <input type="submit" name="actionButton" value="Quantity" title="click here to sort by quantity" class="btn btn-link" />
+                            </th>
+
+                            <th>
+                                Confirmed
+                            </th>
+                            <th></th>
+                        </tr>
                     </thead>
                     <tbody>
-                        @foreach (var item in Model)
+                        @foreach (var trans in Model)
                         {
                             <tr>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Item.Name)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.FromLocation.Name)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.ToLocation.Name)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Quantity)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.TransferDate)
-                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => trans.Title)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => trans.TransferDate)
+                                </td>
                                 <td>
                                     @{
-                                        DateTime deliveryDate = Convert.ToDateTime(item.TransferDate);
+                                        DateTime deliveryDate = Convert.ToDateTime(trans.TransferDate);
                                         TimeSpan timeRemaining = deliveryDate - DateTime.Now;
 
                                         int totalDaysRemaining = (int)timeRemaining.TotalDays;
@@ -181,18 +235,129 @@
                                         </div>
                                     </div>
                                 </td>
-                <td>
-                        @(item.Item.Archived ? " " : " ")
-                        <span class="status text-success @(!item.Item.Archived ? "hide" : "")">&bull;</span>
-                        <span class="status text-danger @(item.Item.Archived ? "hide" : "")">&bull;</span>
-                    
-                </td>
-                <td>
-                    @Html.ActionLink("Edit", "Edit", new { id = item.Id }) |
-                    <a asp-action="Index" asp-controller="OrderItems" title="Click this to go to details" class="padding-for-actions" asp-route-ItemID="@item.ItemId"> Details   </a> |
-                    @Html.ActionLink("Delete", "Delete", new { id = item.Id })
-                </td>
-            </tr>
+                                <td>
+                                    @{
+                                        if (trans.InventoryTransfers.Count() == 0)
+                                        {
+                                            <p>None</p>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var c in trans.InventoryTransfers)
+                                            {
+                                                @c.Item.Name <br />
+                                            }
+                                        }
+                                    }
+                                </td>
+                                <td>
+                                    @{
+                                        if (trans.InventoryTransfers.Count() == 0)
+                                        {
+                                            <p>None</p>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var c in trans.InventoryTransfers)
+                                            {
+                                                @c.FromLocation.Name <br />
+                                            }
+                                        }
+                                    }
+                                </td>
+                                <td>
+                                    @{
+                                        if (trans.InventoryTransfers.Count() == 0)
+                                        {
+                                            <p>None</p>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var c in trans.InventoryTransfers)
+                                            {
+                                                @c.ToLocation.Name <br />
+                                            }
+                                        }
+                                    }
+                                </td>
+                                <td>
+                                    @{
+                                        if (trans.InventoryTransfers.Count() == 0)
+                                        {
+                                            <p>None</p>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var c in trans.InventoryTransfers)
+                                            {
+                                                if (c.IsComfirmed)
+                                                {
+                                                    @c.ComfirmedQuantity <br />
+                                                }
+                                                else
+                                                {
+                                                    @c.Quantity <br />
+                                                }
+                                            }
+                                        }
+                                    }
+                                </td>
+
+
+
+                                <td>
+                                    @{
+                                        if (trans.InventoryTransfers.Count() == 0)
+                                        {
+                                            <p>None</p>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var c in trans.InventoryTransfers)
+                                            {
+                                                @if (@c.IsComfirmed)
+                                                {
+                                                    <span style="color: green;">&#10003;</span>
+
+
+                                                }
+                                                else
+                                                {
+                                                    <span style="color: red;">&#10007;</span>
+                                                }
+                                                <br />
+                                            }
+                                        }
+                                    }
+                                </td>
+                                <td>
+                                    @{
+                                        bool allItemsLoggedBackIn = true;
+                                        foreach (var item in trans.InventoryTransfers)
+                                        {
+                                            if (!item.IsComfirmed)
+                                            {
+                                                allItemsLoggedBackIn = false;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    @if (!allItemsLoggedBackIn)
+                                    {
+                                        <a href="#" title="Click this to log back in the items" class="padding-for-actions confirm-transit-btn" data-id="@trans.Id" style="cursor: pointer;">Confirm Transit | </a>
+
+                                        <button hidden="hidden" class="addTransitComfirmation" title="Add Supplier" data-bs-toggle="modal" data-bs-target="#addTransitComfirmationModal" type="button">Add</button>
+                                    }
+                                    <a asp-action="EditOverview" title="Click this to edit" class="padding-for-actions" asp-route-id="@trans.Id">Overview </a>
+
+                                    @if (allItemsLoggedBackIn)
+                                    {
+                                        <a asp-action="Archive" title="Click this to edit" class="padding-for-actions" asp-route-id="@trans.Id">| Archive</a>
+                                    }
+
+                                    
+                                </td>
+                            </tr>
                         }
                     </tbody>
                 </table>
@@ -200,5 +365,99 @@
         </div>
         <partial name="_PagingNavBar" />
     </div>
-            
+
 </form>
+@section Scripts{
+
+
+    <script type="text/javascript">
+        var message = '@TempData["InitateMissingItemLog"]';
+        if (message) {
+            console.log(message);
+            $('#addMissingItemLog').trigger('click');
+        }
+    </script>
+<script>
+        localStorage.setItem("Reload", "True");
+    if (localStorage.getItem("PopupModal") == "True") {
+        $('.addTransitComfirmation').trigger('click');
+        localStorage.setItem("PopupModal", "False");
+    }
+    $(document).ready(function () {
+        $('.confirm-transit-btn').click(function () {
+            var selectedId = $(this).data('id');
+            $.ajax({
+                url: '@Url.Action("SetSelectedTransfer", "InventoryTransfers")',
+                type: 'POST',
+                data: { selectedId: selectedId },
+                success: function (result) {
+                    //$('.addTransitComfirmation').trigger('click');
+                    if (localStorage.getItem("Reload") == "True") {
+                        localStorage.setItem("PopupModal", "True");
+                        window.location.reload();
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.log(error);
+                }
+            });
+        });
+    });
+</script>
+
+
+
+
+
+    <script src="~/js/refreshDDL.js"></script>
+
+    <script type="text/javascript">
+        $('#submitTransitComfirmationCreate1').click(function (event) {
+            
+            event.preventDefault();
+            var form = $('#createTransitComfirmationForm');
+            if (form.valid()) {
+                $.ajax({
+                    type: "POST",
+                    url: form.attr('action'),
+                    data: form.serialize(),
+                    success: function () {
+                        $('#addTransitComfirmationModal').modal('hide');
+                        window.location.reload();
+                    },
+                    error: function () {
+                        alert("Create Failed.  There was a problem adding the record.");
+                    }
+                });
+            }
+            return false;
+        });
+        $('#addTransitComfirmationModal').on('hide.bs.modal', function () {
+            $('#createTransitComfirmationForm').find("input[type=text], textarea, select").val("");//to clear the data in the popup
+        });
+    </script>
+
+}
+<script>
+    $(document).ready(function () {
+        // Activate tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+
+        // Filter table rows based on searched term
+        $("#Transfersearch").on("keyup", function () {
+            var term = $(this).val().toLowerCase();
+            $("table tbody tr").each(function () {
+                $row = $(this);
+                var name = $row.find("td:nth-child(4)").text().toLowerCase();
+                console.log(name);
+                if (name.search(term) < 0) {
+                    $row.hide();
+                } else {
+                    $row.show();
+                }
+            });
+        });
+    });
+</script>
+
+

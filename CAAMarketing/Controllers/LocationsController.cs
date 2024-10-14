@@ -7,13 +7,11 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using CAAMarketing.Data;
 using CAAMarketing.Models;
-using CAAMarketing.Utilities;
-using Microsoft.AspNetCore.Authorization;
 using NToastNotify;
+using CAAMarketing.Utilities;
 
 namespace CAAMarketing.Controllers
 {
-    [Authorize]
     public class LocationsController : Controller
     {
         private readonly CAAContext _context;
@@ -21,15 +19,16 @@ namespace CAAMarketing.Controllers
 
         public LocationsController(CAAContext context, IToastNotification toastNotification)
         {
+
             _context = context;
             _toastNotification = toastNotification;
+
         }
 
         // GET: Locations
         public async Task<IActionResult> Index(string SearchString, int? page, int? pageSizeID
             , string actionButton, string sortDirection = "asc", string sortField = "Location")
         {
-
             ViewDataReturnURL();
 
             //FOR THE SILENTMESSAGE BUTTON SHOWING HOW MANY NOTIF ARE INSIDE
@@ -73,7 +72,7 @@ namespace CAAMarketing.Controllers
             //Clear the sort/filter/paging URL Cookie for Controller
             CookieHelper.CookieSet(HttpContext, ControllerName() + "URL", "", -1);
 
-            
+
 
 
             //Toggle the Open/Closed state of the collapse depending on if we are filtering
@@ -122,7 +121,7 @@ namespace CAAMarketing.Controllers
                         .OrderByDescending(p => p.Name);
                 }
             }
-            
+
             //Set sort for next time
             ViewData["sortField"] = sortField;
             ViewData["sortDirection"] = sortDirection;
@@ -159,11 +158,11 @@ namespace CAAMarketing.Controllers
         // GET: Locations/Create
         public IActionResult Create()
         {
+
             _toastNotification.AddAlertToastMessage($"Please Start By Entering Information Of The Location, You Can Cancel By Clicking The Exit Button.");
 
             //URL with the last filter, sort and page parameters for this controller
             ViewDataReturnURL();
-
             return View();
         }
 
@@ -172,7 +171,7 @@ namespace CAAMarketing.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name")] Location location)
+        public async Task<IActionResult> Create([Bind("Id,Name,Phone,Address")] Location location)
         {
             //URL with the last filter, sort and page parameters for this controller
             ViewDataReturnURL();
@@ -180,9 +179,10 @@ namespace CAAMarketing.Controllers
             if (ModelState.IsValid)
             {
                 _context.Add(location);
-                await _context.SaveChangesAsync();
-                //return RedirectToAction(nameof(Index));
-                return RedirectToAction("Details", new { location.Id});
+                await _context.SaveChangesAudit();
+                _toastNotification.AddSuccessToastMessage("Location Record Created.");
+
+                return RedirectToAction(nameof(Index));
 
             }
             return View(location);
@@ -212,8 +212,9 @@ namespace CAAMarketing.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, Byte[] RowVersion)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,Phone,Address")] Location location, byte[] RowVersion)
         {
+
             //URL with the last filter, sort and page parameters for this controller
             ViewDataReturnURL();
 
@@ -232,11 +233,11 @@ namespace CAAMarketing.Controllers
 
             //Try updating it with the values posted
             if (await TryUpdateModelAsync<Location>(locationToUpdate, "",
-                l => l.Name, l => l.Phone , l => l.Address))
+                l => l.Name, l => l.Phone, l => l.Address))
             {
                 try
                 {
-                    await _context.SaveChangesAsync();
+                    await _context.SaveChangesAudit();
                     //return RedirectToAction(nameof(Index));
                     return RedirectToAction("Details", new { locationToUpdate.Id });
 
@@ -267,9 +268,6 @@ namespace CAAMarketing.Controllers
         // GET: Locations/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            //URL with the last filter, sort and page parameters for this controller
-            ViewDataReturnURL();
-
             if (id == null || _context.Locations == null)
             {
                 return NotFound();
@@ -290,9 +288,6 @@ namespace CAAMarketing.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            //URL with the last filter, sort and page parameters for this controller
-            ViewDataReturnURL();
-
             if (_context.Locations == null)
             {
                 return Problem("Entity set 'CAAContext.Locations'  is null.");
@@ -303,10 +298,8 @@ namespace CAAMarketing.Controllers
                 _context.Locations.Remove(location);
             }
             
-            await _context.SaveChangesAsync();
-            //return RedirectToAction(nameof(Index));
-            return Redirect(ViewData["returnURL"].ToString());
-
+            await _context.SaveChangesAudit();
+            return RedirectToAction(nameof(Index));
         }
         private string ControllerName()
         {

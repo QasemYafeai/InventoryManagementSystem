@@ -7,161 +7,310 @@
 <form asp-controller="Inventories" asp-action="InventoryCostsReport" method="get">
     <input type="hidden" name="sortDirection" value="@ViewData["sortDirection"]" />
     <input type="hidden" name="sortField" value="@ViewData["sortField"]" />
-
-    <div class="form-horizontal">
-        <button class="btn btn-success  @(ViewData["Filtering"])" type="button" data-bs-toggle="collapse" id="filterToggle" data-bs-target="#collapseFilter" aria-expanded="false" aria-controls="collapseFilter" title="Click this to filter/search">
-            <i class="material-icons">Filter/Search</i>
+    <!-- Help Section -->
+    <div class="container my-3">
+        <button type="button" class="btn btn-info btn-color-Create" data-bs-toggle="modal" data-bs-target="#inventoryCostsReportHelpModal">
+            Need Help? Click here
         </button>
-        <div class="btn btn-primary btn-color-Create">
-            <div class="navbar-collapse nav-center collapse d-sm-inline-flex justify-content-between">
-                <ul class="navbar-nav flex-grow-1">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle a-color" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            Download Report
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <li>
-                                <a asp-action="DownloadInventory" title="Click this to download the inventory report" class="dropdown-item">
-                                    Full Inventory
-                                    @*<i class="material-icons">&#xE147;</i>*@
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a asp-action="DownloadInventoryLevels" title="Click this to download the inventory levels report" class="dropdown-item">
-                                    Inventory Levels
-                                    @*<i class="material-icons">&#xE147;</i>*@
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a asp-action="DownloadInventoryCosts" title="Click this to download the inventory costs report" class="dropdown-item">
-                                    Inventory Costs
-                                    @*<i class="material-icons">&#xE147;</i>*@
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a asp-action="DownloadInventoryEvents" title="Click this to download the inventory events report" class="dropdown-item">
-                                    Inventory Events
-                                    @*<i class="material-icons">&#xE147;</i>*@
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
+
+        <!-- Help Modal -->
+        <div class="modal fade" id="inventoryCostsReportHelpModal" tabindex="-1" aria-labelledby="inventoryCostsReportHelpModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="inventoryCostsReportHelpModalLabel">How to use the Inventory Costs Report page</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="list-group">
+                            <div class="list-group-item">
+                                <i class="bi bi-filter-square text-primary"></i> <strong>Filter/Search:</strong> Click the "Filter/Search" button to access filtering and search options for the inventory costs report. Use this feature to generate a filtered Excel sheet based on your filter and search criteria.
+                            </div>
+                            <div class="list-group-item">
+                                <i class="bi bi-search text-success"></i> <strong>Filter by various criteria:</strong> Use the filter options to search by location, UPC, or item name. Click "Filter" to apply the filters, or "Clear" to reset them.
+                            </div>
+                            <div class="list-group-item">
+                                <i class="bi bi-arrow-up-down text-warning"></i> <strong>Sorting:</strong> Click on the column headers (UPC, Item Name, Cost, Quantity, Location) to sort the inventory costs report by the respective criteria.
+                            </div>
+                            <div class="list-group-item">
+                                <i class="bi bi-download text-info"></i> <strong>Download Report:</strong> Click the "Download" button to download the current inventory costs report. If you have applied filters or search criteria, the downloaded Excel sheet will reflect those filters.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="btn btn-primary btn-color-Create">
-            <div class="navbar-collapse nav-center collapse d-sm-inline-flex justify-content-between">
-                <ul class="navbar-nav flex-grow-1">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle a-color" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            View Report
-                        </a>
-                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <li>
-                                <a asp-controller="Inventories" asp-action="InventoryReport" class="dropdown-item">Full Inventory</a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a asp-controller="Inventories" asp-action="InventoryLevelsReport" class="dropdown-item">Inventory Levels</a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a asp-controller="Inventories" asp-action="InventoryCostsReport" class="dropdown-item">Inventory Costs</a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a asp-controller="Inventories" asp-action="InventoryEventsReport" class="dropdown-item">Inventory Events</a>
-                            </li>
-                        </ul>
-                    </li>
-                </ul>
-            </div>
-        </div>
+    </div>
+    <div class="form-horizontal">
+        <button class="btn btn-success  @(ViewData["Filtering"])" type="button" data-bs-toggle="collapse" id="filterToggle" data-bs-target="#collapseFilter" aria-expanded="false" aria-controls="collapseFilter" title="Click this to Filter/Search">
+            <i>Filter/Search</i>
+        </button>
     </div>
     <div class="collapse" id="collapseFilter">
         <div class="card card-body">
             <div class="row">
                 <div class="form-group col-md-4">
                     <label class="control-label">Filter by Locations: (Ctrl + click to multiselect)</label>
-                    @Html.ListBox("LocationID", null, htmlAttributes: new { @class = "form-control", @size = 8 })
+                    @Html.ListBox("LocationID", null, htmlAttributes: new { @class = "form-control", @size = 8 })<label>
+                    <input class="control-label" type="checkbox" value="true" checked="@(ViewBag.FilterByBaseStockLevel?.IsChecked ?? false)" id="FilterByBaseStockLevel" name="FilterByBaseStockLevel" />
+                        Filter items below base stock level (100)
+                    </label>
+                    <label>
+                        <input class="control-label" type="checkbox" value="true" checked="@(ViewBag.FilterByLowStockLevel?.IsChecked ?? false)" id="FilterByLowStockLevel" name="FilterByLowStockLevel" />
+                        Filter items with low stock level (10)
+                    </label>
+                    <label>
+                        <input class="control-label" type="checkbox" value="true" checked="@(ViewBag.FilterByOutOfStockLevel?.IsChecked ?? false)" id="FilterByOutOfStockLevel" name="FilterByOutOfStockLevel" />
+                        Filter items with out of stock level (0)
+                    </label>
+                    <br />
+                    <br />
                 </div>
                 <div class="form-group col-md-4">
-                    <label class="control-label">Search Item Name OR UPC:</label>
-                    @Html.TextBox("SearchString", null, new { @class = "form-control" })
+                    <label class="control-label">Search UPC:</label>
+                    @Html.TextBox("SearchString1", null, new { @class = "form-control" })
+
+                    <label class="control-label">Min Cost:</label>
+                    <input type="number" id="MinCost" name="MinCost" step="any" value="@ViewBag.MinCost?.ToString()" class="form-control">
+
+                    <label class="control-label">Min Quantity:</label>
+                    <input type="number" id="MinQuantity" name="MinQuantity" value="@ViewBag.MinQuantity?.ToString()" class="form-control">
+                </div>
+                <div class="form-group col-md-4">
+                    <label class="control-label">Search Item Name:</label>
+                    @Html.TextBox("SearchString2", null, new { @class = "form-control" })
+
+                    <label class="control-label">Max Cost:</label>
+                    <input type="number" id="MaxCost" name="MaxCost" step="any" value="@ViewBag.MaxCost?.ToString()" class="form-control">
+
+                    <label class="control-label">Max Quantity:</label>
+                    <input type="number" id="MaxQuantity" name="MaxQuantity" value="@ViewBag.MaxQuantity?.ToString()" class="form-control">
                 </div>
                 <div class="form-group col-md-4 align-self-end">
-                    <input type="submit" name="actionButton" value="Filter" title="click here to filter" class="btn btn-success" />
-                    <a asp-action="InventoryCostsReport" title="Click here to clear the filter" class="btn btn-outline-dark">Clear</a>
+                    <input type="submit" name="actionButton" value="Filter" title="click here to filter" class="btn-filter" />
+                    <a asp-action="InventoryCostsReport" title="Click here to clear the filter" class="btn-clear-barcode">Clear</a>
+
+                    <button asp-action="DownloadInventory" type="submit" name="actionButton" style="float:right" value="Download" title="click here to Download Report" class="btn btn-primary btn-color-Create btn-download" id="quick-report-download-button-hidden" hidden="hidden">
+                        <span class="material-icons">download</span> Quick Report Download
+                    </button>
+                    <button asp-action="DownloadInventory" type="submit" name="actionButton" style="float:right" value="Download" title="click here to Download Report" class="btn btn-primary btn-color-Create btn-download" id="quick-report-download-button">
+                        <span class="spinner-border spinner-border-sm d-none" id="Quickdownload-spinner" role="status" aria-hidden="true"></span>
+                        <span class="material-icons" style="font-size:17px;">download</span> Quick Report Download
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="container-fluid">
-        <div class="table-responsive">
-            <div class="table-wrapper">
-                <div class="table-title d-flex justify-content-between align-items-center">
-                    <h2>Inventory Costs Report</h2>
-                    <a asp-action="DownloadInventoryCosts" title="Click this to downloead the inventory costs report" class="btn btn-primary btn-color-Create">
-                        Download Report
-                        @*<i class="material-icons">&#xE147;</i>*@
-                    </a>
+    <div id="table-content">
+        <div class="container-fluid">
+            <div class="table-responsive">
+                <div class="table-wrapper">
+                    <div class="table-title d-flex justify-content-between align-items-center">
+                        <h2>Inventory Cost Report</h2>
+                        <div class="col-xs-7">
+                            <div style="display: inline-block; margin-right: 20px;">
+                                <h5>
+                                    Total Cost: @{
+                                        decimal totalCost = 0m;
+                                        foreach (var item in Model)
+                                        {
+                                            totalCost += item.Cost * item.Quantity;
+                                        }
+
+                                        @totalCost.ToString("C2")
+                                    }
+                                </h5>
+                            </div>
+                            &nbsp;&nbsp;
+                            <button asp-action="DownloadInventoryCosts" type="submit" name="actionButton" value="Download" title="click here to Download Report" class="btn btn-primary btn-color-Create btn-download" id="download-button">
+                                <span class="spinner-border spinner-border-sm d-none" id="download-spinner" role="status" aria-hidden="true"></span>
+                                <span class="material-icons">download</span> Download
+                            </button>
+
+
+                            <button asp-action="DownloadInventoryCosts" type="submit" name="actionButton" value="Download" title="click here to Download Report" class="btn btn-primary btn-color-Create btn-download" id="download-button-hidden" hidden="hidden">
+                                <span class="material-icons">download</span> Download
+                            </button>
+                            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+
+                            <script>
+                                const downloadButton = document.querySelector('#download-button');
+                                const hiddenDownloadButton = document.querySelector('#download-button-hidden');
+
+                                const QuickDownloaddownloadButton = document.querySelector('#quick-report-download-button');
+                                const QuickDownloadhiddenDownloadButton = document.querySelector('#quick-report-download-button-hidden');
+
+                                downloadButton.addEventListener('click', (event) => {
+                                    event.preventDefault();
+
+                                    Swal.fire({
+                                        type: 'success',
+                                        title: 'Downloading...',
+                                        text: 'Your Inventory Costs Report will download shortly',
+                                        showConfirmButton: false,
+                                        showProgressSteps: true,
+                                        progressSteps: ['1'],
+                                        timerProgressBar: true,
+                                        onBeforeOpen: () => {
+                                            Swal.showLoading();
+                                            setTimeout(() => {
+                                                Swal.close();
+                                            }, 1600);
+                                        },
+                                        onClose: () => {
+                                            // Click the hidden download button to trigger the download
+                                            hiddenDownloadButton.click();
+                                        }
+                                    });
+                                });
+
+                                QuickDownloaddownloadButton.addEventListener('click', (event) => {
+                                    event.preventDefault();
+
+                                    Swal.fire({
+                                        type: 'success',
+                                        title: 'Downloading...',
+                                        text: 'Your Inventory Costs Report will download shortly',
+                                        showConfirmButton: false,
+                                        showProgressSteps: true,
+                                        progressSteps: ['1'],
+                                        timerProgressBar: true,
+                                        onBeforeOpen: () => {
+                                            Swal.showLoading();
+                                            setTimeout(() => {
+                                                Swal.close();
+                                            }, 1600);
+                                        },
+                                        onClose: () => {
+                                            // Click the hidden download button to trigger the download
+                                            QuickDownloadhiddenDownloadButton.click();
+                                        }
+                                    });
+                                });
+
+                            </script>
+
+
+
+                            @*<div class="search-box">
+                            <div class="input-group">
+                            @*<input type="text" id="InventoryCostReportsearch" class="form-control" placeholder="Search by Item Name">*@
+                            @*@Html.TextBox("SearchString3", null, new { @class = "form-control", @placeholder = "Search by Item Name", @id = "InventoryCostReportsearch" })
+                            <span class="input-group-addon"><i class="material-icons">&#xE8B6;</i></span>
+                            </div>
+                            </div>*@
+                        </div>
+                    </div>
+
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>
+                                    @* @Html.DisplayNameFor(model => model.UPC)*@
+                                    <input type="submit" name="actionButton" value="UPC" title="click here to sort by UPC" class="btn btn-link" />
+                                </th>
+                                <th>
+                                    @*  @Html.DisplayNameFor(model => model.ItemName)*@
+                                    <input type="submit" name="actionButton" value="Item Name" title="click here to sort by Item Name" class="btn btn-link" />
+                                </th>
+                                <th>
+                                    @*    @Html.DisplayNameFor(model => model.Cost)*@
+                                    <input type="submit" name="actionButton" value="Cost" title="click here to sort by Cost" class="btn btn-link" />
+                                </th>
+                                <th>
+                                    @*    @Html.DisplayNameFor(model => model.Quantity)*@
+                                    <input type="submit" name="actionButton" value="Quantity" title="click here to sort by Quantity" class="btn btn-link" />
+                                </th>
+                                <th>
+                                    @*  @Html.DisplayNameFor(model => model.Location)*@
+                                    <input type="submit" name="actionButton" value="Location" title="click here to sort by Location" class="btn btn-link" />
+                                </th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        @Html.DisplayFor(modelItem => item.UPC)
+                                    </td>
+                                    <td>
+                                        @Html.DisplayFor(modelItem => item.ItemName)
+                                    </td>
+                                    <td>
+                                        @Html.DisplayFor(modelItem => item.Cost)
+                                    </td>
+                                    <td>
+                                        @Html.DisplayFor(modelItem => item.Quantity)
+                                    </td>
+                                    <td>
+                                        @Html.DisplayFor(modelItem => item.Location)
+                                    </td>
+                                    <td>
+                                        <a asp-controller="Items" asp-action="ItemAuditHistory" target="_blank title="Click this for audit history" class="padding-for-actions" asp-route-id="@item.ID"> Audit History </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
-
-        <table class="table table-hover">
-            <thead>
-                <tr>
-                    <th>
-                        @* @Html.DisplayNameFor(model => model.UPC)*@
-                        <input type="submit" name="actionButton" value="UPC" title="click here to sort by UPC" class="btn btn-link" />
-                    </th>
-                    <th>
-                        @*  @Html.DisplayNameFor(model => model.ItemName)*@
-                        <input type="submit" name="actionButton" value="ItemName" title="click here to sort by ItemName" class="btn btn-link" />
-                    </th>
-                    <th>
-                        @*    @Html.DisplayNameFor(model => model.Cost)*@
-                        <input type="submit" name="actionButton" value="Cost" title="click here to sort by Cost" class="btn btn-link" />
-                    </th>
-                    <th>
-                        @*    @Html.DisplayNameFor(model => model.Quantity)*@
-                        <input type="submit" name="actionButton" value="Quantity" title="click here to sort by Quantity" class="btn btn-link" />
-                    </th>
-                    <th>
-                        @*  @Html.DisplayNameFor(model => model.Location)*@
-                        <input type="submit" name="actionButton" value="Location" title="click here to sort by Location" class="btn btn-link" />
-                    </th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model)
-                {
-                    <tr>
-                        <td>
-                            @Html.DisplayFor(modelItem => item.UPC)
-                        </td>
-                        <td>
-                            @Html.DisplayFor(modelItem => item.ItemName)
-                        </td>
-                        <td>
-                            @Html.DisplayFor(modelItem => item.Cost)
-                        </td>
-                        <td>
-                            @Html.DisplayFor(modelItem => item.Quantity)
-                        </td>
-                        <td>
-                            @Html.DisplayFor(modelItem => item.Location)
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
     </div>
-    <partial name="_PagingNavBar" />
+    @* <partial name="_PagingNavBar" />*@
 </form>
+
+@section Styles {
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" />
+}
+@section Scripts {
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script type="text/javascript">
+        $('#SearchString1').autocomplete({
+            minLength: 1,
+            source: '@Url.Action("GetItemUPC","Inventories")'
+        });
+        $('#SearchString2').autocomplete({
+            minLength: 1,
+            source: '@Url.Action("GetItemNames","Inventories")'
+        });
+
+        // Add a click event listener to the Download button
+        $('.btn-download').on('click', function () {
+            var spinner = $('#download-spinner');
+            spinner.toggleClass('d-none');
+        });
+
+        // Add a click event listener to the Download button
+        $('.btn-download').on('click', function () {
+            var spinner = $('#Quickdownload-spinner');
+            spinner.toggleClass('d-none');
+        });
+    </script>
+}
+<script>
+    $(document).ready(function () {
+        // Activate tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+
+        // Filter table rows based on searched term
+        $("#InventoryCostReportsearch").on("keyup", function () {
+            var term = $(this).val().toLowerCase();
+            $("table tbody tr").each(function () {
+                $row = $(this);
+                var name = $row.find("td:nth-child(2)").text().toLowerCase();
+                console.log(name);
+                if (name.search(term) < 0) {
+                    $row.hide();
+                } else {
+                    $row.show();
+                }
+            });
+        });
+    });
+</script>

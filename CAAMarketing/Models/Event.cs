@@ -29,14 +29,33 @@ namespace CAAMarketing.Models
         [Required]
         [Display(Name = "Reserved Date")]
         [DataType(DataType.Date)]
-        public DateTime? ReservedEventDate { get; set; }
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
+        public DateTime? ReservedEventDate { get; set; } = DateTime.Today;
 
         [Required]
         [Display(Name = "Return Date")]
         [DataType(DataType.Date)]
-        public DateTime? ReturnEventDate { get; set; }
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
+        public DateTime? ReturnEventDate { get; set; } = DateTime.Today;
 
-        public ICollection<ItemReservation> ItemReservations { get; set; }
+        public ICollection<ItemReservation> ItemReservations { get; set; } = new HashSet<ItemReservation>();
 
+        //public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        //{
+        //    //Create a string array containing the one element-the field where our error message should show up.
+        //    //then you pass this to the ValidaitonResult This is only so the mesasge displays beside the field
+        //    //instead of just in the validaiton summary.
+        //    //var field = new[] { "DOB" };
+
+        //    //if (ReturnEventDate.GetValueOrDefault() < DateTime.Today)
+        //    //{
+        //    //    yield return new ValidationResult("Return Date cannot be in the Past.", new[] { "ReturnEventDate" });
+        //    //}
+        //}
+
+        public static implicit operator Event(ItemReservation v)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

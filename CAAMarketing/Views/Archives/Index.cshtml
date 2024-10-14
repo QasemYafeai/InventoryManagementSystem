@@ -1,4 +1,4 @@
-﻿@model IEnumerable<CAAMarketing.Models.Inventory>
+﻿@model IEnumerable<CAAMarketing.Models.Item>
 
 @{
     ViewData["Title"] = "Index";
@@ -7,10 +7,45 @@
 <form asp-action="Index" method="get">
     <input type="hidden" name="sortDirection" value="@ViewData["sortDirection"]" />
     <input type="hidden" name="sortField" value="@ViewData["sortField"]" />
-
+    <!-- Help Section -->
+<div class="container my-3">
+    <button type="button" class="btn btn-info btn-color-Create" data-bs-toggle="modal" data-bs-target="#archivesPageHelpModal">
+        Need Help? Click here
+    </button>
+    <!-- Help Modal -->
+<div class="modal fade" id="archivesPageHelpModal" tabindex="-1" aria-labelledby="archivesPageHelpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="archivesPageHelpModalLabel">How to use the Archives page</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <i class="bi bi-filter-square text-primary"></i> <strong>Filter:</strong> Click the "Filter" button to access filtering options for the archives page. Use this feature to generate a filtered view based on your filter criteria.
+                    </div>
+                    <div class="list-group-item">
+                        <i class="bi bi-search text-success"></i> <strong>Quick Search:</strong> Use the search box on the top-right corner to quickly search for items by their name. This allows you to find items without using the filter option.
+                    </div>
+                    <div class="list-group-item">
+                        <i class="bi bi-arrow-up-down text-warning"></i> <strong>Sorting:</strong> Click on the column headers (Item, UPC, Location, Quantity, Cost, Employee) to sort the archives page by the respective criteria.
+                    </div>
+                    <div class="list-group-item">
+                        <i class="bi bi-recycle text-info"></i> <strong>Recover Items:</strong> Click the "Recover" link next to an item to recover it from the archives.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
     <div class="form-horizontal">
-        <button class="btn btn-success @(ViewData["Filtering"])"  type="button" data-bs-toggle="collapse" id="filterToggle" data-bs-target="#collapseFilter" aria-expanded="false" aria-controls="collapseFilter" title="Click this to filter/search">
-            <i class="material-icons">Filter/Search</i>
+        <button class="btn btn-success @(ViewData["Filtering"])"  type="button" data-bs-toggle="collapse" id="filterToggle" data-bs-target="#collapseFilter" aria-expanded="false" aria-controls="collapseFilter" title="Click this to filter">
+            <i>Filter</i>
         </button>
     </div>
     <div class="collapse" id="collapseFilter">
@@ -25,13 +60,13 @@
                 @Html.CheckBox("LowQty", null)
                 </div>*@
 
-                <div class="form-group col-md-4">
+                @*<div class="form-group col-md-4">
                     <label class="control-label">Search Item Name OR UPC:</label>
                     @Html.TextBox("SearchString", null, new { @class = "form-control" })
-                </div>
+                </div>*@
                 <div class="form-group col-md-4 align-self-end">
-                    <input type="submit" name="actionButton" title="Click here to filter" value="Filter" class="btn btn-success" />
-                    <a asp-action="Index" title="Click here to clear the filter " class="btn btn-outline-dark">Clear</a>
+                    <input type="submit" name="actionButton" title="Click here to filter" value="Filter" class="btn-filter" />
+                    <a asp-action="Index" title="Click here to clear the filter " class="btn-clear-barcode">Clear</a>
                 </div>
             </div>
         </div>
@@ -46,62 +81,74 @@
     alert("@ViewBag.InventoryLow");
     </script>
     }*@
-
-    <div class="container-fluid">
+  <div id="table-content">
+<div class="container-fluid">
         <div class="table-responsive">
             <div class="table-wrapper">
                 <div class="table-title d-flex justify-content-between align-items-center">
-                    <h2>Archived Items</h2>
-                    @*<div class="col-xs-7">
-                    <a asp-action="Create" title="Click this to create new receive" class="btn btn-primary">
-                    <i class="material-icons">&#xE147;</i>
-                    <span>Create a Receive</span>
-                    </a>
-                    </div>*@
+                    <h1>Inventory</h1>
+                        <div class="col-xs-7">
+                              <a asp-controller="Items" asp-action="Create" title="Click here to create a new item" class="btn btn-primary btn-color-Create">
+                                <i class="material-icons">&#xE147;</i>
+                                <span>Create New Item</span>
+                            </a>
+
+                            <div class="search-box">
+                            <div class="input-group">
+                                <input type="text" id="search" class="form-control" placeholder="Search by Item Name or UPC">
+                                <span class="input-group-addon"><i class="material-icons">&#xE8B6;</i></span>
+                            </div>
+                        </div>
+                        </div>
                 </div>
                 <table class="table table-hover">
-                    <thead>
+                    <thead class="thead-light">
                         <tr>
-                            <th>Item Image :</th>
+                            <th>Image:</th>
                             <th>
-                                <input type="submit" name="actionButton" value="Item" title="Click here to sort by items" class="btn btn-link" />
+                                <input type="submit" name="actionButton" value="Item" title="click here to sort by Items" class="btn btn-link" />
                             </th>
                             <th>
-                                <input type="submit" name="actionButton" value="UPC" title="Click here to sort by UPC" class="btn btn-link" />
+                                <input type="submit" name="actionButton" value="UPC" title="click here to sort by Items" class="btn btn-link" />
+                             @*   @Html.DisplayNameFor(model => model.Item.UPC)*@
                             </th>
                             <th>
-                                <input type="submit" name="actionButton" value="Location" title="Click here to sort by Locations" class="btn btn-link" />
+                                <input type="submit" name="actionButton" disabled="disabled" value="Stock" title="click here to sort by Stock" class="btn btn-link" />
+                             @*   @Html.DisplayNameFor(model => model.Item.UPC)*@
                             </th>
                             <th>
-                                <input type="submit" name="actionButton" value="Quantity" title="Click here to sort by Quantity" class="btn btn-link" />
+                                <input type="submit" name="actionButton" title="click here to sort by location" value="Location" class="btn btn-link" />
                             </th>
                             <th>
-                                <input type="submit" name="actionButton" value="Cost" title="Click here to sort by Cost" class="btn btn-link" />
-                               @* @Html.DisplayNameFor(model => model.Cost)*@
+                                <input type="submit" name="actionButton" title="click here to sort by quantity" value="#" class="btn btn-link" />
                             </th>
-                            @*<th>
-                            <input type="submit" name="actionButton" value="DateRecieved" class="btn btn-link" />
-                            </th>*@
-                            <th>
-                                <input type="submit" name="actionButton" value="Employee" title="Click here to sort by Employees" class="btn btn-link" />
+                                                        <th>
+                                <input type="submit" name="actionButton" title="click here to sort by quantity" value="Employee" class="btn btn-link" />
                             </th>
+                                                        <th>
+                                <input type="submit" name="actionButton" title="click here to sort by quantity" value="Archived" class="btn btn-link" />
+                            </th>
+
+                            
                             <th>
-                                @Html.DisplayNameFor(model => model.Item.Archived)
+
                             </th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var inventory in Model)
+
+                        @foreach (var item in Model)
                         {
-                            <tr>
-                                <td>
+
+                                <tr>
+                                    <td>
                                     @{
-                                        if (inventory.Item.ItemThumbNail?.Content != null)
+                                        if (item.ItemThumbNail?.Content != null)
                                         {
-                                            string imageBase64 = Convert.ToBase64String(inventory.Item.ItemThumbNail.Content);
-                                            string imageSrc = string.Format("data:" + inventory.Item.ItemThumbNail.MimeType + ";base64,{0}", imageBase64);
-                                                        <img src="@imageSrc" alt="Item Picture of @inventory.Item.Name" title="Item Picture of @inventory.Item.Name" class="img-fluid avatar" />
+                                            string imageBase64 = Convert.ToBase64String(item.ItemThumbNail.Content);
+                                            string imageSrc = string.Format("data:" + item.ItemThumbNail.MimeType + ";base64,{0}", imageBase64);
+                                                        <img src="@imageSrc" alt="Item Picture of @item.Name" title="Item Picture of @item.Name" class="img-fluid avatar" />
                                         }
                                         else
                                             { 
@@ -111,39 +158,67 @@
                                             }
                                     }
                                     </td>
-                                <td>
-                                    @Html.DisplayFor(modelItem => inventory.Item.Name)
+                                    <td>
+                                    @Html.DisplayFor(modelItem => item.Name)
+                                    </td>
+                                    <td>
+                                    @Html.DisplayFor(modelItem => item.UPC)
+                                    </td>
+                                     <td>
+                                    @{int TotalStock = 0;}
+                                    @foreach(var c in item.Inventories)
+                                    {
+                                        TotalStock += c.Quantity;
+                                    }
+                                    @TotalStock
+                                    </td>
+                                   <td>
+                                    @{
+                                        if(item.Inventories.Count() == 0)
+                                        {
+                                            <p>None</p>
+                                        }
+                                        else
+                                        {
+                                            @foreach(var c in item.Inventories)
+                                            {
+                                                @c.Location.Name <br />
+                                            }
+                                        }
+
+                                    }
                                 </td>
                                 <td>
-                                    @Html.DisplayFor(modelItem => inventory.Item.UPC)
+                                    @{
+                                        if(item.Inventories.Count() == 0)
+                                        {
+                                            <p>None</p>
+                                        }
+                                        else
+                                        {
+                                            @foreach(var c in item.Inventories)
+                                            {
+                                                @c.Quantity <br />
+                                            }
+                                        }
+
+                                    }
                                 </td>
                                 <td>
-                                    @Html.DisplayFor(modelItem => inventory.Location.Name)
+                                    @Html.DisplayFor(modelItem => item.Employee.FullName)
                                 </td>
                                 <td>
-                                    @Html.DisplayFor(modelItem => inventory.Quantity)
-                                </td>
-                                <td>
-                                    @Html.DisplayFor(modelItem => inventory.Cost)
-                                </td>
-                                @*<td>
-                            @Html.DisplayFor(modelItem => inventory.Item.DateReceived)
-                            </td>*@
-                                <td>
-                                    @Html.DisplayFor(modelItem => inventory.Item.Employee.FullName)
-                                </td>
-                                <td>
-                                    @if (inventory.Item.Archived)
+                                    @if (item.Archived)
                                     {
                                         <span style="color: green;">&#10003;</span>
                                     }
                                 </td>
 
-
+                                <td></td>
 
                                 <td>
 
-                                    <a asp-controller="Archives" asp-action="Delete" title="Click this to recover" asp-route-id="@inventory.Item.ID">Recover</a>
+                                    <a asp-controller="Archives" asp-action="Delete" title="Click this to recover" asp-route-id="@item.ID">Recover</a>
                                     @*<div class="tooltip"> <a asp-action="Recover" asp-route-id="@inventory.Id"> <img src="~/images/icons-recover-24.png" alt="Edit Icon" /> <span class="tooltiptext">Recover</span></a> </div>*@
                                     @* <a asp-action="Details" title="Click this to go to details" class="padding-for-actions" asp-route-id="@inventory.Item.ID">Details</a>*@
                                     @*<div class="tooltip"><a asp-controller="Items" asp-action="Delete" asp-route-id="@inventory.Item.ID"><img src="~/images/icons8-trash-24.png" alt="Trash Can Icon" /> <span class="tooltiptext">Delete</span></a></div>*@
@@ -160,6 +235,28 @@
     </div>
 
 </form>
+
+  <script>
+    $(document).ready(function () {
+        // Activate tooltips
+        $('[data-toggle="tooltip"]').tooltip();
+
+        // Filter table rows based on searched term
+        $("#Archivessearch").on("keyup", function () {
+            var term = $(this).val().toLowerCase();
+            $("table tbody tr").each(function () {
+                $row = $(this);
+                var name = $row.find("td:nth-child(2)").text().toLowerCase();
+                console.log(name);
+                if (name.search(term) < 0) {
+                    $row.hide();
+                } else {
+                    $row.show();
+                }
+            });
+        });
+    });
+</script>
 
 
 

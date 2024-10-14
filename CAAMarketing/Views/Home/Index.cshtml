@@ -18,112 +18,44 @@
     <a class="nav-link" asp-area="Identity" asp-page="/Account/Login">Login</a>
 </div>
 
+
     <div class="rowAct">
-        <div class="colAct">
-            <h2>Help</h2>
-            @*<a class="dropdown-item" asp-area="" asp-controller="Home" asp-action="Privacy">Click Here For Help</a>*@
-            <p>
-                Need help? click here to get all the info you need on how to navigate through and work the site. 
-            </p>
-            <a asp-area="" asp-controller="Home" asp-action="Privacy">
-                <span class="linkSpanner"></span>
-            </a>
-        </div>
-        <div class="colAct">
-            @{
-                if (User.Identity.IsAuthenticated)
-                {
-                    <h3>Events</h3>
-                    //<a class="dropdown-item" asp-area="" asp-controller="Orders" asp-action="Index">Click here For Receiving Items</a>
-                    <p>
-                        Check out all events that are happening or are going to happen
-                    </p>
-                    <a asp-area="" asp-controller="Events" asp-action="Index">
-                        <span class="linkSpanner"></span>
-                    </a>
-                }
-                else
-                {
-                    <h3>Events</h3>
-                    //<a class="dropdown-item" asp-area="" asp-controller="" asp-action="">Click here For Receiving Items</a>
-                    <p>
-                        Check out all events that are happening or are going to happen
-                    </p>
-	                <a href="#loginpop">
-                        <span class="linkSpanner"></span>
-                    </a>
-                }
-            }
 
-        </div>
+    <div class="colAct">
 
-        <div class="colAct">
-            @{
-                if (User.Identity.IsAuthenticated)
-                {
-                    <h3>Report Download</h3>
-                       //<a asp-controller="Inventories" asp-action="InventoryReport" asp-action="DownloadInventory" class="dropdown-item">click here to download
-                       //     @*<i class="material-icons">&#xE147;</i>*@
-                       // </a>
-                    <p>
-                        Download the Inventory Report of all items in your database and inventory
-                    </p>
-                    <a asp-area="" asp-controller="Inventories" asp-action="DownloadInventory">
-                        <span class="linkSpanner"></span>
-                    </a>
-                }
-                else
-                {
-                    <h3>Report Download</h3>
-                    //<a class="dropdown-item" asp-area="" asp-controller="" asp-action="">Download Inventory Report</a>
-                    <p>
-                        Download the Inventory Report of all items in your database and inventory
-                    </p>
-	                <a href="#loginpop">
-                        <span class="linkSpanner"></span>
-                    </a>
-                }
-            }
-
-        </div>
-
-        <div class="colAct">
         @{
-                if (User.Identity.IsAuthenticated)
-                {
-                    <h3>Archive</h3>
-                    //<a class="dropdown-item" asp-area="" asp-controller="Archives" asp-action="Index">Click here For Archived Items</a>
-                    <p>
-                        Go to all the archived items, unarchive them if needed
-                    </p>
-                    <a asp-area="" asp-controller="Archives" asp-action="Index">
-                        <span class="linkSpanner"></span>
-                    </a>
-                }
-                else
-                {
-                    <h3>Archive</h3>
-                    //<a class="dropdown-item" asp-area="" asp-controller="" asp-action="">Click here For Archived Items</a>
-                    <p>
-                        Go to all the archived items, unarchive them if needed
-                    </p>
-	                <a href="#loginpop">
-                        <span class="linkSpanner"></span>
-                    </a>
-                }
+            if (User.Identity.IsAuthenticated)
+            {
+                <h3 class="text-left header">Create Item</h3>
+                <p class="text-left">
+                    Quickly create an item through here this will register it into the database.
+                </p>
+                <a asp-area="" asp-controller="Items" asp-action="Create">
+                    <span class="linkSpanner"></span>
+                </a>
             }
-        </div>
+            else
+            {
+                <h3 class="text-left header">Create Item</h3>
+                <p class="text-left">
+                    Quickly create an item through here; this will register it into the database.
+                </p>
+
+                <a href="#loginpop">
+                    <span class="linkSpanner"></span>
+                </a>
+            }
+        }
     </div>
 
-    <div class="rowAct">
         <div class="colAct">
         @{
                 if(User.Identity.IsAuthenticated)
                 {
-                    <h3>New Event</h3>
+                <h3 class="text-left header">New Event</h3>
                     //<a class="dropdown-item" asp-area="" asp-controller="" asp-action="">Click here to Create Employee</a>
-                    <p>
-                        Create a new item reservation for an event, choose the event then item and quantity and then mark the reserve and return date.
+                <p class="text-left">
+                        Create a new item reservation for an event, choose the event, items and quantities then mark the reserve and return date.
                     </p>
                     <a asp-area="" asp-controller="Events" asp-action="Create">
                         <span class="linkSpanner"></span>
@@ -131,9 +63,9 @@
                 }
                 else
                 {
-                <h3>New Event</h3>
+                <h3 class="text-left header">New Event</h3>
                     //<a class="dropdown-item" asp-area="" asp-controller="" asp-action="">Click here to Create Employee</a>
-                    <p>
+                <p class="text-left">
                         Create a new item reservation for an event, choose the event then item and quantity and then mark the reserve and return date.
                     </p>
 	                <a href="#loginpop">
@@ -144,68 +76,25 @@
 
         </div>
 
-
-
-
-
-
-        
-        <div class="colAct">
-            @{
-                    if (User.Identity.IsAuthenticated && User.IsInRole("Admin"))
-                    {
-                        <h3>New Employee</h3>
-                        //<a class="dropdown-item" asp-area="" asp-controller="Employees" asp-action="Create">Click here to Create Employee</a>
-                        <p>
-                            Add new employee into database so that they can login (Admin Only)
-                        </p>
-                        <a asp-area="" asp-controller="Employees" asp-action="Create">
-                            <span class="linkSpanner"></span>
-                        </a>
-                    }
-                    else if(User.Identity.IsAuthenticated)
-                    {
-                        <h3>New Employee</h3>
-                        //<a class="dropdown-item" asp-area="" asp-controller="" asp-action="">Click here to Create Employee</a>
-                        <p>
-                            Add new employee into database so that they can login (Admin Only)
-                        </p>
-	                    <a href="#adminpop">
-                            <span class="linkSpanner"></span>
-                        </a>
-                    }
-                    else
-                    {
-                        <h3>New Employee</h3>
-                        //<a class="dropdown-item" asp-area="" asp-controller="" asp-action="">Click here to Create Employee</a>
-                        <p>
-                            Add new employee into database so that they can login (Admin Only)
-                        </p>
-	                    <a href="#loginpop">
-                            <span class="linkSpanner"></span>
-                        </a>
-                    }
-                }
-
-        </div>
+       
         <div class="colAct">
             @{
                 if (User.Identity.IsAuthenticated)
                 {
-                    <h3>New Transfer</h3>
+                <h3 class="text-left header">New Transfer</h3>
                     //<a class="dropdown-item" asp-area="" asp-controller="Inventories" asp-action="Index">Click here For Inventory</a>
-                    <p>
+                <p class="text-left">
                         Create a new inventory item transfer to mark that an item has been transfered from one location to another.
                     </p>
-                    <a asp-area="" asp-controller="InventoryTransfers" asp-action="CreateMultipleTransfers">
+                    <a  asp-area="" asp-controller="InventoryTransfers" asp-action="CreateMultipleTransfers">
                         <span class="linkSpanner"></span>
                     </a>
                 }
                 else
                 {
-                    <h3>New Transfer</h3>
+                <h3 class="text-left header">New Transfer</h3>
                     //<a class="dropdown-item" asp-area="" asp-controller="" asp-action="">Click here For Inventory</a>
-                    <p>
+                <p class="text-left">
                         Create a new inventory transfer to mark that an item has been transfered from one location to another.
                     </p>
 	                <a href="#loginpop">
@@ -215,38 +104,142 @@
             }
 
         </div>
+
+
+    <div class="colAct">
+        @{
+            if (User.Identity.IsAuthenticated)
+            {
+                <h3 class="text-left header">Report Download</h3>
+                //<a asp-controller="Inventories" asp-action="InventoryReport" asp-action="DownloadInventory" class="dropdown-item">click here to download
+                //     @*<i class="material-icons">&#xE147;</i>*@
+                // </a>
+                <p class="text-left">
+                    Download the Inventory Report of all items in your database and inventory
+                </p>
+                <a asp-area="" asp-controller="Inventories" asp-action="DownloadInventory">
+                    <span class="linkSpanner"></span>
+                </a>
+            }
+            else
+            {
+                <h3 class="text-left header">Report Download</h3>
+                //<a class="dropdown-item" asp-area="" asp-controller="" asp-action="">Download Inventory Report</a>
+                <p class="text-left">
+                    Download the Inventory Report of all items in your database and inventory
+                </p>
+                <a href="#loginpop">
+                    <span class="linkSpanner"></span>
+                </a>
+            }
+        }
+
+    </div>
+
+
+        
+    </div>
+
+
+
+    <div class="rowAct">
         
         <div class="colAct">
-
             @{
                 if (User.Identity.IsAuthenticated)
                 {
-                    <h3>Create Item</h3>
-                    <p>
-                        Quickly create an item through here this will register it into the database.
+                <h3 class="text-left header">Events</h3>
+                    //<a class="dropdown-item" asp-area="" asp-controller="Orders" asp-action="Index">Click here For Receiving Items</a>
+                    <p class="text-left">
+                        Check out all events that are happening or are going to happen
                     </p>
-                    <a asp-area="" asp-controller="Items" asp-action="Create">
+                    <a asp-area="" asp-controller="Events" asp-action="Index">
                         <span class="linkSpanner"></span>
                     </a>
                 }
                 else
                 {
-                    <h3>Create Item</h3>
-                    <p>
-                        Quickly create an item through here this will register it into the database.
+                <h3 class="text-left header">Events</h3>
+                    //<a class="dropdown-item" asp-area="" asp-controller="" asp-action="">Click here For Receiving Items</a>
+                <p class="text-left">
+                        Check out all events that are happening or are going to happen
                     </p>
+	                <a href="#loginpop">
+                        <span class="linkSpanner"></span>
+                    </a>
+                }
+            }
 
+        </div>
+
+    <div class="colAct">
+        @{
+            if (User.Identity.IsAuthenticated)
+            {
+                <h3 class="text-left header">Barcode</h3>
+                //<a class="dropdown-item" asp-area="" asp-controller="Employees" asp-action="Create">Click here to Create Employee</a>
+                <p class="text-left">
+                    Check out all the barcodes for the items and print barcodes (multiple or for one item).
+                </p>
+                <a asp-area="" asp-controller="Items" asp-action="GetPrintableItems">
+                    <span class="linkSpanner"></span>
+                </a>
+            }
+            else
+            {
+                <h3 class="text-left header">Barcode</h3>
+                //<a class="dropdown-item" asp-area="" asp-controller="" asp-action="">Click here to Create Employee</a>
+                <p class="text-left">
+                    Check out all the barcodes for the items and print barcodes (multiple or for one item).
+                </p>
+                <a class="text-left" href="#loginpop">
+                    <span class="linkSpanner"></span>
+                </a>
+            }
+        }
+
+    </div>
+
+       
+
+        <div class="colAct">
+        @{
+                if (User.Identity.IsAuthenticated)
+                {
+                <h3 class="text-left header">Archive</h3>
+                    //<a class="dropdown-item" asp-area="" asp-controller="Archives" asp-action="Index">Click here For Archived Items</a>
+                <p class="text-left">
+                        Go to all the archived items, unarchive them if needed
+                    </p>
+                    <a asp-area="" asp-controller="Archives" asp-action="Index">
+                        <span class="linkSpanner"></span>
+                    </a>
+                }
+                else
+                {
+                <h3 class="text-left header">Archive</h3>
+                    //<a class="dropdown-item" asp-area="" asp-controller="" asp-action="">Click here For Archived Items</a>
+                <p class="text-left">
+                        Go to all the archived items, unarchive them if needed
+                    </p>
 	                <a href="#loginpop">
                         <span class="linkSpanner"></span>
                     </a>
                 }
             }
         </div>
-
-
-
-        
+        <div class="colAct">
+        <h3 class="text-left header">Help</h3>
+            @*<a class="dropdown-item" asp-area="" asp-controller="Home" asp-action="Privacy">Click Here For Help</a>*@
+        <p class="text-left">
+            Need help? click here to get all the info you need on how to navigate and work through the site.
+        </p>
+            <a asp-area="" asp-controller="Home" asp-action="Privacy">
+                <span class="linkSpanner"></span>
+            </a>
+        </div>
     </div>
+
 
 <!--popups for not being logged in or not being an admin-->
 <div id="loginpop" class="overlay">
@@ -271,7 +264,9 @@
 
 <!-- Creating Item Page, Download Inventory Report and anywhere there are buttons-->
 
-
+@section Styles {
+    <link rel="stylesheet" href="/css/custom-design.css" />
+}
 
 
 

@@ -1,0 +1,381 @@
+﻿@using System.Text
+@model List<CAAMarketing.ViewModels.PrintableViewModel>
+
+@{
+    ViewBag.Title = "Get Printable Items";
+}
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.14.0/css/all.css" integrity="sha384-HzLeBuhoNPvSl5KYnjx0BT+WB0QEEqLprO+NBkkk5gbc67FTaL7XIGa2w1L0Xbgc" crossorigin="anonymous">
+<link rel="stylesheet" href="~/css/barcode.css" asp-append-version="true" />
+
+<div class="container">
+    <!-- Help Button -->
+    <div class="container my-3">
+        <button type="button" class="btn btn-info btn-color-Create" data-bs-toggle="modal" data-bs-target="#getPrintableItemsHelpModal">
+            Need Help? Click here
+        </button>
+    </div>
+    <!-- Help Modal -->
+    <div class="modal fade" id="getPrintableItemsHelpModal" tabindex="-1" aria-labelledby="getPrintableItemsHelpModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="getPrintableItemsHelpModalLabel">How to Get Printable Items</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="list-group">
+                        <div class="list-group-item">
+                            <i class="bi bi-upc text-primary"></i> <strong>Scan Barcode:</strong> Click the "Scan Barcode" button to scan a barcode using your device camera. Once the barcode is scanned, the table will be filtered to show only the item with the scanned UPC code.
+                        </div>
+                        <div class="list-group-item">
+                            <i class="bi bi-check-square text-success"></i> <strong>Select Item:</strong> Check the checkbox next to an item to select it for printing. To select all items, check the "Select All" checkbox at the top of the table.
+                        </div>
+                        <div class="list-group-item">
+                            <i class="bi bi-printer text-primary"></i> <strong>Print:</strong> Click the "Print Selected" button to print the selected items. Each item will be printed as many times as specified in the "Quantity" column.If you only want to print the barcode for a single item, you can click the "Print" button in the same row as the item in the table.
+                        </div>
+                        <div class="list-group-item">
+                            <i class="bi bi-arrow-clockwise text-primary"></i> <strong>Clear Filter:</strong> Click the "Clear" button to clear the selected items and start over.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn-barcode" title="Click this to scan barcods" id="scan-barcode-btn">Scan Barcode</button>
+    <input type="hidden" id="scanned-upc-codes" />
+    <div class="quagga-scanner-container">
+        <div id="interactive" class="viewport"></div>
+        <button class="close-scanner-btn" title="Close" id="close-scanner-btn">&times;</button>
+    </div>
+
+
+
+
+
+    <div style="display:none;">
+        @foreach (var item in Model)
+        {
+            <div class="printable-item" data-upc="@item.UPC">
+                <div class="item-name">@item.Name</div>
+                <div class="upc-code">@item.UPC</div>
+                <div class="quantity">@item.Quantity</div>
+                <div class="barcode-svg">
+                    <img src="data:image/svg+xml;base64,@(Convert.ToBase64String(Encoding.UTF8.GetBytes(item.BarcodeSvg)))" alt="Barcode" />
+                </div>
+            </div>
+        }
+    </div>
+    <button class="btn-barcode hidden-button" title="Click this to print the selected items" id="print-selected-btn">Print Selected</button>
+    <button class="btn-clear-barcode hidden-button" title="Click this to clear the selection" id="clear-filter-btn">Clear</button>
+
+
+    <div id="table-content">
+<div class="container-fluid">
+        <div class="table-responsive">
+            <div class="table-wrapper">
+                <div class="table-title d-flex justify-content-between align-items-center">
+                    <h1>Items list </h1>
+                        <div class="col-xs-7">
+                            <div class="search-box">
+                            <div class="input-group">
+                                <input type="text" id="search" class="form-control" placeholder="Search by Item Name or UPC">
+                                <span class="input-group-addon"><i class="material-icons">&#xE8B6;</i></span>
+                            </div>
+                        </div>
+                        </div>
+                </div>
+                <table class="table table-hover">
+                    <thead class="thead-light">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="select-all-checkbox" /> All</th>
+                                <th>Name</th>
+                                <th>UPC</th>
+                                <th>Quantity</th>
+                                <th>Barcode</th>
+                                <th>Print</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                                @foreach (var item in Model)
+                                {
+                                <tr>
+                                    <td><input type="checkbox" class="item-checkbox" data-upc="@item.UPC" /></td>
+                                    <td>
+                                        <div class="item-name">
+                                            @item.Name
+                                        </div>
+                                   </td>
+                                    <td>@item.UPC</td>
+                                    <td>@item.Quantity</td>
+                                    <td>
+                                        <div class="barcode-svg">
+                                                @Html.Raw(item.BarcodeSvg)
+                                        </div>
+                                    </td>
+                                    <td><input type="number" class="label-quantity" data-upc="@item.UPC" value="1" min="1" /></td>
+                                    <td><a class="print-btn link-action" data-upc="@item.UPC">Print</a></td>
+                                </tr>
+                                }
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<style>
+    .quagga-scanner-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        display: none;
+    }
+
+    .close-scanner-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: #f44336;
+        color: white;
+        font-size: 16px;
+        border: none;
+        cursor: pointer;
+        border-radius: 50%;
+        text-align: center;
+        width: 30px;
+        height: 30px;
+        line-height: 30px;
+        padding: 0;
+    }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        // Select all checkboxes
+        $("#select-all-checkbox").change(function () {
+            $(".item-checkbox").prop("checked", $(this).prop("checked"));
+        });
+        // Print selected items
+        $("#print-selected-btn").click(function () {
+            var selectedItems = [];
+            $(".item-checkbox:checked").each(function () {
+                var upc = $(this).data("upc");
+                var quantity = $(this).closest("tr").find(".label-quantity").val();
+                selectedItems.push({ upc: upc, quantity: quantity });
+            });
+            printItems(selectedItems);
+        });
+
+        // Print single item
+        $(".print-btn").click(function () {
+            var upc = $(this).data("upc");
+            var quantity = $(this).closest("tr").find(".label-quantity").val();
+            printItems([{ upc: upc, quantity: quantity }]);
+        });
+
+
+        function printItems(items, barcodesPerRow) {
+            var upcs = {};
+            var htmlContent = "";
+            items.forEach(function (item) {
+                if (!upcs[item.upc]) {
+                    upcs[item.upc] = [];
+                }
+                upcs[item.upc].push(item);
+            });
+            Object.keys(upcs).forEach(function (upc, index) {
+                var itemsForUpc = upcs[upc];
+                var htmlForUpc = "";
+                itemsForUpc.forEach(function (item) {
+                    var printableItem = $(".printable-item[data-upc='" + item.upc + "']");
+                    var barcodeSvg = printableItem.find(".barcode-svg").html();
+                    var itemName = printableItem.find(".item-name").html();
+                    for (var i = 0; i < item.quantity; i++) {
+                        htmlForUpc +=  "<div class='barcode-container'>" + itemName + barcodeSvg + "</div>";
+                    }
+                    // Add a page break after each row
+                    if ((i + 1) % barcodesPerRow === 0) {
+                        htmlForUpc += "<br/><div style='clear: both;'></div>";
+                    }
+                });
+                htmlContent += "<br/><br/><br/><div><h2>"+ "</h2>" + htmlForUpc + "</div>";
+                if (index !== Object.keys(upcs).length - 1) {
+                    htmlContent += "<br/><br/>";
+                }
+            });
+            printBarcode(htmlContent, barcodesPerRow);
+        }
+
+
+
+
+
+
+        function printBarcode(htmlContent, barcodesPerRow) {
+            var printWindow = window.open('', '_blank');
+            printWindow.document.write('<html><head><title>Print Barcode</title>');
+            printWindow.document.write('<style>.barcode-container{margin: 10px 5px 5px 10px;width: 150px;margin-bottom: 20px;float: left; text-align: center;} </style>');
+            
+            printWindow.document.write('</head><body>');
+            printWindow.document.write(htmlContent);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            // Add a delay before calling the print() method
+            setTimeout(function () {
+                printWindow.print();
+            }, 400);
+        }
+
+
+
+        function stopScanner() {
+            Quagga.stop();
+            $(".quagga-scanner-container").hide();
+        }
+
+        function initializeQuagga() {
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: document.querySelector('.quagga-scanner-container .viewport'),
+                    constraints: {
+                        facingMode: "environment"
+                    }
+                },
+                decoder: {
+                    readers: ["ean_reader"]
+                }
+            }, function (error) {
+                if (error) {
+                    console.log(error);
+                    return;
+                }
+                Quagga.start();
+            });
+
+            Quagga.onDetected(function (result) {
+                var upcCode = result.codeResult.code;
+                var scannedUpcCodes = JSON.parse($("#scanned-upc-codes").val() || "[]");
+                scannedUpcCodes.push(upcCode);
+                $("#scanned-upc-codes").val(JSON.stringify(scannedUpcCodes));
+                Quagga.stop();
+                $(".quagga-scanner-container").hide();
+                filterItemsByUpc(scannedUpcCodes);
+            });
+        }
+
+        $("#scan-barcode-btn").click(function () {
+             $(".quagga-scanner-container").show();
+              initializeQuagga();
+        });
+
+        $("#close-scanner-btn").click(function () {
+            stopScanner();
+        });
+
+        $("#clear-filter-btn").click(function () {
+            location.reload();
+        });
+
+        function filterItemsByUpc(upcCodes) {
+            $.ajax({
+                url: '@Url.Action("GetPrintableItems", "Items")?upcCodes=' + upcCodes.join(','),
+                success: function (response) {
+                    // Replace the table content with the filtered items
+                    $("table.table").replaceWith(response);
+                },
+                error: function (xhr, status, error) {
+                    console.log("Error: " + error);
+                }
+            });
+        }
+
+
+        //// Scan barcode button click event
+        //$("#scan-barcode-btn").click(function () {
+        //    $("#scanner-container").show();
+        //    initQuagga();
+        //});
+
+        $("#clear-filter-btn").click(function () {
+            location.reload();
+        });
+    });
+
+    // show the "Print Selected" and "Clear" buttons only when there are selected items.
+    function updateButtonVisibility() {
+        const hasSelectedItems = document.querySelectorAll('.item-checkbox:checked').length > 0;
+        const printSelectedBtn = document.getElementById('print-selected-btn');
+        const clearFilterBtn = document.getElementById('clear-filter-btn');
+
+        if (hasSelectedItems) {
+            printSelectedBtn.classList.remove('hidden-button');
+            printSelectedBtn.classList.add('visible-button');
+            clearFilterBtn.classList.remove('hidden-button');
+            clearFilterBtn.classList.add('visible-button');
+        } else {
+            printSelectedBtn.classList.remove('visible-button');
+            printSelectedBtn.classList.add('hidden-button');
+            clearFilterBtn.classList.remove('visible-button');
+            clearFilterBtn.classList.add('hidden-button');
+        }
+    }
+
+    document.getElementById('select-all-checkbox').addEventListener('change', (event) => {
+        const isChecked = event.target.checked;
+        const checkboxes = document.querySelectorAll('.item-checkbox');
+        checkboxes.forEach((checkbox) => {
+            checkbox.checked = isChecked;
+        });
+        updateButtonVisibility();
+    });
+
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+    itemCheckboxes.forEach((checkbox) => {
+        checkbox.addEventListener('change', updateButtonVisibility);
+    });
+
+
+        $(document).ready(function () {
+            // Activate tooltips
+            $('[data-toggle="tooltip"]').tooltip();
+
+            // Filter table rows based on searched term
+            $("#search").on("keyup", function () {
+                var term = $(this).val().toLowerCase();
+                $("table tbody tr").each(function () {
+                    $row = $(this);
+                    var name = $row.find("td:nth-child(2)").text().toLowerCase();
+                    var upc = $row.find("td:nth-child(3)").text().toLowerCase();
+                    console.log(name);
+                    console.log(upc);
+                    if (name.search(term) < 0 && upc.search(term) < 0) {
+                        $row.hide();
+                    } else {
+                        $row.show();
+                    }
+                });
+            });
+        });
+
+</script>
+

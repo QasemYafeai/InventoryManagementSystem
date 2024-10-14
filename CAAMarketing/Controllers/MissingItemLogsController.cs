@@ -23,6 +23,17 @@ namespace CAAMarketing.Controllers
         public async Task<IActionResult> Index()
         {
             var cAAContext = _context.MissingItemLogs.Include(m => m.Employee).Include(m => m.Event).Include(m => m.Item).Include(m => m.Location);
+            
+            List<MissingTransitItem> MissingTransits = _context.MissingTransitItems
+               .Include(e => e.Item)
+               .Include(e => e.FromLocation)
+               .Include(e => e.ToLocation)
+               .Include(e => e.Employee)
+               .AsNoTracking()
+               .ToList();
+
+            ViewBag.MissingTransits = MissingTransits;
+
             return View(await cAAContext.ToListAsync());
         }
 
@@ -40,6 +51,11 @@ namespace CAAMarketing.Controllers
                 .Include(m => m.Item)
                 .Include(m => m.Location)
                 .FirstOrDefaultAsync(m => m.ID == id);
+
+
+
+            
+
             if (missingItemLog == null)
             {
                 return NotFound();
@@ -68,7 +84,7 @@ namespace CAAMarketing.Controllers
             if (ModelState.IsValid)
             {
                 _context.Add(missingItemLog);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAudit();
                 return RedirectToAction(nameof(Index));
             }
             ViewData["EmployeeID"] = new SelectList(_context.Employees, "ID", "Email", missingItemLog.EmployeeID);
@@ -115,7 +131,7 @@ namespace CAAMarketing.Controllers
                 try
                 {
                     _context.Update(missingItemLog);
-                    await _context.SaveChangesAsync();
+                    await _context.SaveChangesAudit();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -174,7 +190,7 @@ namespace CAAMarketing.Controllers
                 _context.MissingItemLogs.Remove(missingItemLog);
             }
             
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAudit();
             return RedirectToAction(nameof(Index));
         }
 

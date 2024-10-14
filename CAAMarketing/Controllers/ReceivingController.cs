@@ -43,7 +43,7 @@ namespace CAAMarketing.Controllers
 
             //List of sort options.
             //NOTE: make sure this array has matching values to the column headings
-            string[] sortOptions = new[] { "Item", "Quantity", "UPC","Cost", "DateMade", "DeliveryDate" };
+            string[] sortOptions = new[] { "Item", "Quantity", "UPC", "Cost", "DateMade", "DeliveryDate" };
 
             var orders = _context.Orders
                 .Include(o => o.Item)
@@ -191,7 +191,7 @@ namespace CAAMarketing.Controllers
         }
 
         // GET: Orders/Create
-        
+
         public IActionResult Create(int? id)
         {
             // existing code...
@@ -220,72 +220,88 @@ namespace CAAMarketing.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ID,Quantity,DateMade,DeliveryDate,Cost,ItemID,LocationID")] Receiving order)
+        public async Task<IActionResult> Create([Bind("ID,Quantity,DateMade,DeliveryDate,Cost,ItemID,LocationID")] Receiving order, string LowItemThreshold)
         {
             //URL with the last filter, sort and page parameters for this controller
             ViewDataReturnURL();
             Receiving newOrder = new Receiving();
+
+
             if (ModelState.IsValid)
             {
-                // Check if item already exists in items table
-                var item = await _context.Items.FirstOrDefaultAsync(i => i.ID == order.ItemID);
-                if (item == null)
+                if (order.Quantity < 0)
                 {
-                    // If item doesn't exist, create a new item
-                    item = new Item { ID = order.ItemID };
-                    //_context.Add(item);
-                }
-                newOrder.ItemID = order.ItemID;
-                newOrder.LocationID = order.LocationID;
-                newOrder.Cost = order.Cost;
-                newOrder.DateMade = order.DateMade;
-                newOrder.DeliveryDate = order.DeliveryDate;
-                newOrder.Quantity= order.Quantity;
-                newOrder.CreatedBy = order.CreatedBy;
-                newOrder.UpdatedBy = order.UpdatedBy;
-                newOrder.UpdatedOn = order.UpdatedOn;
-                newOrder.EmployeeNameUser = order.EmployeeNameUser;
-                // Add order to orders table
-                _context.Add(newOrder);
-                await _context.SaveChangesAsync();
-
-                var inventory = await _context.Inventories.FirstOrDefaultAsync(i => i.ItemID == order.ItemID);
-                if (inventory != null)
-                {
-                    inventory.Quantity += order.Quantity;
-                    inventory.Cost = order.Cost;
-                    inventory.LocationID = order.LocationID;
-                    inventory.Item.DateReceived = order.DeliveryDate.Value;
-                    _context.Update(inventory);
-                    await _context.SaveChangesAsync();
+                    _toastNotification.AddErrorToastMessage("Oops, you cant have a negative quantity, please try again...");
                 }
                 else
                 {
+                    // Check if item already exists in items table
+                    var item = await _context.Items.FirstOrDefaultAsync(i => i.ID == order.ItemID);
+                    //var category = await _context.Categories.FirstOrDefaultAsync(i => i.Id == order.Item.CategoryID);
+                    if (item == null)
+                    {
+                        // If item doesn't exist, create a new item
+                        item = new Item { ID = order.ItemID };
+                        //_context.Add(item);
+                    }
+                    //category.LowCategoryThreshold = Convert.ToInt32(LowItemThreshold);
+                    //_context.Update(category);
+                    //_context.SaveChanges();
 
-                    Inventory invCreate = new Inventory();
+                    newOrder.ItemID = order.ItemID;
+                    newOrder.LocationID = order.LocationID;
+                    newOrder.Cost = order.Cost;
+                    newOrder.DateMade = order.DateMade;
+                    newOrder.DeliveryDate = order.DeliveryDate;
+                    newOrder.Quantity = order.Quantity;
+                    newOrder.CreatedBy = order.CreatedBy;
+                    newOrder.UpdatedBy = order.UpdatedBy;
+                    newOrder.UpdatedOn = order.UpdatedOn;
+                    newOrder.EmployeeNameUser = order.EmployeeNameUser;
+                    // Add order to orders table
+                    _context.Add(newOrder);
+                    await _context.SaveChangesAudit();
 
-                    invCreate.LocationID = order.LocationID;
-                    invCreate.ItemID = item.ID;
-                    invCreate.Quantity = order.Quantity;
-                    invCreate.Cost = order.Cost;
+                    var inventory = await _context.Inventories.FirstOrDefaultAsync(i => i.ItemID == order.ItemID);
+                    if (inventory != null)
+                    {
+                        inventory.Quantity += order.Quantity;
+                        inventory.Cost = order.Cost;
+                        inventory.LocationID = order.LocationID;
+                        inventory.Item.DateReceived = order.DeliveryDate.Value;
+                        _context.Update(inventory);
+                        await _context.SaveChangesAudit();
+                    }
+                    else
+                    {
 
-                    item.ItemInvCreated = true;
-                    //item.Quantity += newOrder.Quantity;
-                    item.Cost = newOrder.Cost;
-                    _context.Add(invCreate);
-                    _context.Update(item);
+                        Inventory invCreate = new Inventory();
 
-                    await _context.SaveChangesAsync();
+                        invCreate.LocationID = order.LocationID;
+                        invCreate.ItemID = item.ID;
+                        invCreate.Quantity = order.Quantity;
+                        invCreate.Cost = order.Cost;
+
+                        item.ItemInvCreated = true;
+                        //item.Quantity += newOrder.Quantity;
+                        item.Cost = newOrder.Cost;
+                        _context.Add(invCreate);
+                        _context.Update(item);
+
+                        await _context.SaveChangesAudit();
+                    }
+                    // return RedirectToAction(nameof(Index));
+                    //Send on to add orders
+                    return RedirectToAction("Index", "OrderItems", new { order.ItemID });
+                    //return RedirectToAction("Details", new { order.ID });
+
                 }
-                // return RedirectToAction(nameof(Index));
-                //Send on to add orders
-                return RedirectToAction("Index", "OrderItems", new { order.ItemID });
-                //return RedirectToAction("Details", new { order.ID });
+                ViewData["ItemID"] = new SelectList(_context.Items, "ID", "Name", order.ItemID);
+                ViewData["LocationID"] = new SelectList(_context.Locations, "Id", "Name", order.LocationID);
 
+                return View(order);
             }
-            ViewData["ItemID"] = new SelectList(_context.Items, "ID", "Name", order.ItemID);
-            ViewData["LocationID"] = new SelectList(_context.Locations, "Id", "Name", order.LocationID);
-             
+
             return View(order);
         }
 
@@ -334,81 +350,92 @@ namespace CAAMarketing.Controllers
             _context.Entry(orderToUpdate).Property("RowVersion").OriginalValue = RowVersion;
             var item = await _context.Items.FirstOrDefaultAsync(i => i.ID == orderToUpdate.ItemID);
             var oldOrderQuantity = orderToUpdate.Quantity;
+            
             if (await TryUpdateModelAsync<Receiving>(orderToUpdate, "",
                 o => o.Quantity, o => o.DateMade, o => o.DeliveryDate, o => o.Cost, o => o.ItemID))
             {
-                try
+                if (orderToUpdate.Quantity < 0)
                 {
-                    var inventory = await _context.Inventories.FirstOrDefaultAsync(i => i.ItemID == orderToUpdate.ItemID);
+                    _toastNotification.AddErrorToastMessage("Oops, you cannot have negative numbers, please try again.");
+
                    
-                    if (inventory != null)
+                }
+                else
+                {
+                    try
                     {
-                        
-                        var newInventoryQuantity = inventory.Quantity + (orderToUpdate.Quantity - oldOrderQuantity);
-                        if (newInventoryQuantity > 0)
+                        var inventory = await _context.Inventories.FirstOrDefaultAsync(i => i.ItemID == orderToUpdate.ItemID);
+
+                        if (inventory != null)
                         {
-                            inventory.Quantity = newInventoryQuantity;
-                            inventory.Cost = orderToUpdate.Cost;
+
+                            var newInventoryQuantity = inventory.Quantity + (orderToUpdate.Quantity - oldOrderQuantity);
+                            if (newInventoryQuantity > 0)
+                            {
+                                inventory.Quantity = newInventoryQuantity;
+                                inventory.Cost = orderToUpdate.Cost;
+                            }
+                            else
+                            {
+                                _context.Inventories.Remove(inventory);
+                            }
+                            _context.Update(inventory);
+                            await _context.SaveChangesAudit();
                         }
                         else
                         {
-                            _context.Inventories.Remove(inventory);
-                        }
-                        _context.Update(inventory);
-                        await _context.SaveChangesAsync();
-                    }
-                    else
-                    {
-                        if (orderToUpdate.Quantity > 0)
-                        {
-                            inventory = new Inventory
+                            if (orderToUpdate.Quantity > 0)
                             {
-                                ItemID = orderToUpdate.ItemID,
-                                Quantity = orderToUpdate.Quantity,
-                                Cost = orderToUpdate.Cost
-                            };
-                            _context.Inventories.Add(inventory);
-                            await _context.SaveChangesAsync();
+                                inventory = new Inventory
+                                {
+                                    ItemID = orderToUpdate.ItemID,
+                                    Quantity = orderToUpdate.Quantity,
+                                    Cost = orderToUpdate.Cost
+                                };
+                                _context.Inventories.Add(inventory);
+                                await _context.SaveChangesAudit();
+                            }
+                        }
+                        await _context.SaveChangesAudit();
+
+                        var newOrderValues = await _context.Orders.FirstOrDefaultAsync(o => o.ID == id);
+                        try
+                        {
+                            item.Cost = newOrderValues.Cost;
+                            _context.Update(item);
+                            await _context.SaveChangesAudit();
+                        }
+                        catch (Exception)
+                        {
+
+                            throw;
+                        }
+                        _toastNotification.AddSuccessToastMessage("Receiving record updated.");
+                        //return RedirectToAction(nameof(Index));
+                        return RedirectToAction("Details", new { orderToUpdate.ID });
+
+                    }
+                    catch (DbUpdateConcurrencyException)
+                    {
+                        if (!OrderExists(orderToUpdate.ID))
+                        {
+                            return NotFound();
+                        }
+                        else
+                        {
+                            ModelState.AddModelError(string.Empty, "The record you attempted to edit "
+                                + "was modified by another user. Please go back and refresh.");
                         }
                     }
-                    await _context.SaveChangesAsync();
-
-                    var newOrderValues = await _context.Orders.FirstOrDefaultAsync(o => o.ID == id);
-                    try
+                    catch (DbUpdateException dex)
                     {
-                        item.Cost = newOrderValues.Cost;
-                        _context.Update(item);
-                        await _context.SaveChangesAsync();
-                    }
-                    catch (Exception)
-                    {
+                        ModelState.AddModelError("", "Unable to save changes. Try again, and if the problem persists see your system administrator.");
 
-                        throw;
                     }
-
-                    //return RedirectToAction(nameof(Index));
-                    return RedirectToAction("Details", new { orderToUpdate.ID });
-
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!OrderExists(orderToUpdate.ID))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        ModelState.AddModelError(string.Empty, "The record you attempted to edit "
-                            + "was modified by another user. Please go back and refresh.");
-                    }
-                }
-                catch (DbUpdateException dex)
-                {
-                    ModelState.AddModelError("", "Unable to save changes. Try again, and if the problem persists see your system administrator.");
-
                 }
 
             }
+
             ViewData["ItemID"] = new SelectList(_context.Items, "ID", "Name", orderToUpdate.ItemID);
             ViewData["LocationID"] = new SelectList(_context.Locations, "Id", "Name", orderToUpdate.LocationID);
             return View(orderToUpdate);
@@ -470,7 +497,7 @@ namespace CAAMarketing.Controllers
                 }
 
                 _context.Orders.Remove(order);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAudit();
                 return Redirect(ViewData["returnURL"].ToString());
             }
             catch (Exception)

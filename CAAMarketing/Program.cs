@@ -106,6 +106,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddSingleton<IEmailConfiguration>(builder.Configuration
     .GetSection("EmailConfiguration").Get<EmailConfiguration>());
 
+
 //For the Identity System
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();

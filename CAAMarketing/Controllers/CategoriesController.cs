@@ -9,17 +9,21 @@ using CAAMarketing.Data;
 using CAAMarketing.Models;
 using CAAMarketing.Utilities;
 using Microsoft.AspNetCore.Authorization;
+using NToastNotify;
 
 namespace CAAMarketing.Controllers
 {
     [Authorize]
     public class CategoriesController : Controller
     {
+
+        private readonly IToastNotification _toastNotification;
         private readonly CAAContext _context;
 
-        public CategoriesController(CAAContext context)
+        public CategoriesController(CAAContext context, IToastNotification toastNotification)
         {
             _context = context;
+            _toastNotification = toastNotification;
         }
 
         // GET: Categories
@@ -142,7 +146,7 @@ namespace CAAMarketing.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name")] Category category)
+        public async Task<IActionResult> Create([Bind("Id,Name,LowCategoryThreshold")] Category category)
         {
             //URL with the last filter, sort and page parameters for this controller
             ViewDataReturnURL();
@@ -155,7 +159,9 @@ namespace CAAMarketing.Controllers
                     await _context.SaveChangesAsync();
                     //return RedirectToAction(nameof(Index));
                     //return RedirectToAction("Details", new { category.Name });
-                    return Redirect(ViewData["returnURL"].ToString());
+                    return Json(new { categoryID = category.Id, categoryName = category.Name });
+
+                    //return Redirect(ViewData["returnURL"].ToString());
 
                 }
             }
@@ -216,7 +222,9 @@ namespace CAAMarketing.Controllers
                 {
                     await _context.SaveChangesAsync();
                     //return RedirectToAction(nameof(Index));
-                    return RedirectToAction("Details", new { categToUpdate.Id });
+                    _toastNotification.AddSuccessToastMessage($"Category Record Updated. Low Item Threshold has been set to {categToUpdate.LowCategoryThreshold}");
+                    return RedirectToAction("Index", "Items");
+                    //return RedirectToAction("Index", "OrderItems", new { order.ItemID });
                     //return Redirect(ViewData["returnURL"].ToString());
 
                 }
@@ -301,7 +309,7 @@ namespace CAAMarketing.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateCategoriesFromItems([Bind("Id,Name")] Category category)
+        public async Task<IActionResult> CreateCategoriesFromItems([Bind("Id,Name,LowCategoryThreshold")] Category category)
         {
             //URL with the last filter, sort and page parameters for this controller
             ViewDataReturnURL();

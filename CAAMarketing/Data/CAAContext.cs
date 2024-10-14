@@ -7,6 +7,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CAAMarketing.ViewModels;
+using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 
 namespace CAAMarketing.Data
 {
@@ -70,6 +72,8 @@ namespace CAAMarketing.Data
 
         public DbSet<Subscription> Subscriptions { get; set; }
 
+        public DbSet<Transfer> Transfers { get; set; }
+
         public DbSet<InventoryTransfer> InventoryTransfers { get; set; }
 
         public DbSet<Archive> Archives { get; set; }
@@ -81,6 +85,12 @@ namespace CAAMarketing.Data
         public DbSet<EventLog> EventLogs { get; set; }
 
         public DbSet<MissingItemLog> MissingItemLogs { get; set; }
+
+        public DbSet<MissingTransitItem> MissingTransitItems { get; set; }
+
+        public DbSet<Audit> AuditLogs { get; set; }
+
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -116,6 +126,11 @@ namespace CAAMarketing.Data
                 .WithMany(l => l.InventoryTransfersTo)
                 .HasForeignKey(t => t.ToLocationId);
 
+            modelBuilder.Entity<InventoryTransfer>()
+                .HasOne(t => t.Transfer)
+                .WithMany(l => l.InventoryTransfers)
+                .HasForeignKey(t => t.TransferId);
+
             modelBuilder.Entity<Item>()
             .HasOne(t => t.Employee)
             .WithMany(l => l.Items)
@@ -133,7 +148,11 @@ namespace CAAMarketing.Data
                 .HasForeignKey(ir => ir.ItemId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-
+            modelBuilder.Entity<MissingTransitItem>()
+                .HasOne(i => i.Item)
+                .WithMany(ir => ir.MissingTransitItems)
+                .HasForeignKey(ir => ir.ItemId)
+                .OnDelete(DeleteBehavior.Cascade);
             //Add a unique index to the Employee Email
             modelBuilder.Entity<Employee>()
             .HasIndex(a => new {
@@ -184,6 +203,112 @@ namespace CAAMarketing.Data
             //    .IsUnique();
         }
 
+        //for audit trail
+        public async Task<int> SaveChangesAudit()
+        {
+            //In the controlles, call this instead of SaveChangesAsync()
+            //to log the changes for auditing
+            OnBeforeSavingAudit();
+            var result = await base.SaveChangesAsync();
+            return result;
+        }
+
+        private void OnBeforeSavingAudit()
+        {
+            ChangeTracker.DetectChanges();
+            var auditEntries = new List<AuditEntry>();
+            var when = DateTime.Now;//Use as consistent timestamp for all changes
+            foreach (var entry in ChangeTracker.Entries())
+            {
+                if (entry.Entity is Audit || entry.State == EntityState.Detached || entry.State == EntityState.Unchanged)
+                    continue;
+
+                //Handle the basic auditing
+                if (entry.Entity is IAuditable trackable)
+                {
+                    switch (entry.State)
+                    {
+                        case EntityState.Modified:
+                            trackable.UpdatedOn = when;
+                            trackable.UpdatedBy = UserName;
+                            break;
+
+                        case EntityState.Added:
+                            trackable.CreatedOn = when;
+                            trackable.CreatedBy = UserName;
+                            trackable.UpdatedOn = when;
+                            trackable.UpdatedBy = UserName;
+                            break;
+                    }
+                }
+                var auditEntry = new AuditEntry(entry);
+
+                //Get the name of the Entity
+                Type TypeOfEntity = entry.Entity.GetType();
+                auditEntry.EntityName = TypeOfEntity.Name;
+
+                //Establish the type of change but, this next line
+                //basically "converts" the enum values in EntityState
+                //to my own prefered values in the enum MyEntityState
+                //For example, EntityState.Deleted becomes "Removed"
+                auditEntry.AuditType = ((MyEntityState)entry.State).ToString();
+
+                auditEntry.UserId = UserName;
+                auditEntry.UserName = UserName;//See if we can get this from the cookie
+                auditEntries.Add(auditEntry);
+                foreach (var property in entry.Properties)
+                {
+                    string propertyName = property.Metadata.Name;
+                    MemberInfo theProperty = TypeOfEntity.GetProperty(propertyName);
+
+                    if (property.Metadata.IsPrimaryKey())
+                    {
+                        //Note: a composite PK will just have multiple entries
+                        auditEntry.KeyValues[propertyName] = property.CurrentValue;
+                        continue;
+                    }
+                    else if (property.Metadata.IsForeignKey())
+                    {
+                        auditEntry.FKeyValues[propertyName] = property.CurrentValue;
+                    }
+                    else
+                    {
+                        //this next bit of code gets the Display(Name= value if there is one and uses it instead
+                        //of the property name
+                        var displayName = theProperty?.GetCustomAttribute(typeof(DisplayAttribute)) as DisplayAttribute;
+                        if (displayName != null) { propertyName = displayName.Name; }
+                    }
+
+                    //Avoid saving Byte Arrays in the audit file
+                    var isByteArray = (theProperty?.ToString().Contains("Byte[]")) == null ? true : theProperty?.ToString().Contains("Byte[]");
+                    if ((bool)!isByteArray)
+                    {
+                        switch (entry.State)
+                        {
+                            case EntityState.Added:
+                                auditEntry.NewValues[propertyName] = property.CurrentValue;
+                                break;
+                            case EntityState.Deleted:
+                                auditEntry.OldValues[propertyName] = property.OriginalValue;
+                                break;
+                            case EntityState.Modified:
+                                if (property.IsModified)
+                                {
+                                    auditEntry.OldValues[propertyName] = property.OriginalValue;
+                                    auditEntry.NewValues[propertyName] = property.CurrentValue;
+                                }
+                                break;
+                        }
+                    }
+
+                }
+            }
+            foreach (var auditEntry in auditEntries)
+            {
+                AuditLogs.Add(auditEntry.ToAudit(when));
+            }
+        }
+
         //The following code is to override both the sync and async SaveChanges methods
         public override int SaveChanges(bool acceptAllChangesOnSuccess)
         {
@@ -226,6 +351,8 @@ namespace CAAMarketing.Data
         public DbSet<CAAMarketing.Models.Category> Category { get; set; }
 
         public DbSet<CAAMarketing.ViewModels.InventoryReportVM> InventoryReportVM { get; set; }
+
+        
 
         //public override int SaveChanges(bool acceptAllChangesOnSuccess)
         //{

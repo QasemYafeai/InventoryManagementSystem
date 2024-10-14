@@ -1,0 +1,86 @@
+﻿
+@model IEnumerable<CAAMarketing.ViewModels.AuditRecordVM>
+<!DOCTYPE html>
+<html lang="en">
+<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
+<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/CAAMarketing.styles.css" asp-append-version="true" />
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="website icon" type="png" href="/images/Caamarketing192.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.3.1/jspdf.umd.min.js"></script>
+<body>
+@if (Model.Count() > 0)
+{
+<div class="container-fluid">
+        <div class="table-responsive">
+            <div class="table-wrapper">
+                <div class="table-title d-flex justify-content-between align-items-center">
+                    <h1>Audit History</h1>
+                </div>
+                <table class="table table-hover">
+                    <thead class="thead-light">
+            <tr>
+                <th>
+                    @Html.DisplayNameFor(model => Model.FirstOrDefault().DateTime)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => Model.FirstOrDefault().User)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => Model.FirstOrDefault().AuditValues)
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.DateTime</td>
+                    <td>@item.User</td>
+                    <td>
+                        @item.Type <br />
+                        @if (item.Type.StartsWith("Update"))
+                        {
+                            <table style="width:100%;">
+                                <thead>
+                                    <tr>
+                                        <th>
+                                            @Html.DisplayNameFor(model => Model.FirstOrDefault().AuditValues.FirstOrDefault().PropertyName)
+                                        </th>
+                                        <th>
+                                            @Html.DisplayNameFor(model => Model.FirstOrDefault().AuditValues.FirstOrDefault().OldValue)
+                                        </th>
+                                        <th>
+                                            @Html.DisplayNameFor(model => Model.FirstOrDefault().AuditValues.FirstOrDefault().NewValue)
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var value in item.AuditValues)
+                                    {
+                                        <tr>
+                                            <td style="word-wrap:break-word;">@value.PropertyName:</td>
+                                            <td style="word-wrap:break-word;">@value.OldValue</td>
+                                            <td style="word-wrap:break-word;">@value.NewValue</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </td>
+                </tr>
+            }
+     </tbody>
+                </table>
+            </div>
+        </div>
+        </div>
+}
+else
+{
+    <strong>No Audit History Saved.</strong>
+}
+</body>
+</html>

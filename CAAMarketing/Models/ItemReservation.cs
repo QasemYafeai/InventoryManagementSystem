@@ -47,9 +47,9 @@ namespace CAAMarketing.Models
         public bool IsLoggedIn { get; set; }
         public int LoggedInQuantity { get; set; }
 
+        public bool IsInventoryDeducted { get; set; } // New property to indicate whether inventory has been deducted or not
 
-
-        public ICollection<EventLog> EventLogs { get; set; }
+        public ICollection<EventLog> EventLogs { get; set; } = new HashSet<EventLog>();
 
     }
 }

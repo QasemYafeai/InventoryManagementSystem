@@ -1,0 +1,113 @@
+﻿.selected-items {
+    flex-wrap: wrap;
+}
+.red-text {
+    color: red;
+}
+.item-fieldset {
+    margin-bottom: 30px;
+    padding: 30px 20px;
+    border-radius: 10px;
+    border: 2px solid #ccc;
+    box-sizing: border-box;
+    background-color: #f9f9f9;
+    transition: all 1s ease;
+}
+
+    .item-fieldset:hover {
+        background-color: #e9e9e9;
+        border: 4px solid #ccc;
+        cursor: pointer;
+    }
+
+    .item-fieldset legend {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 20px;
+    }
+
+    .item-fieldset label {
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+    .item-fieldset input[type="text"] {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    .item-fieldset .form-check {
+        margin-top: 10px;
+    }
+
+    .item-fieldset .form-check-input {
+        margin-right: 10px;
+    }
+
+
+.btn-exit {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 50px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease-in-out;
+}
+
+    .btn-exit:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
+        cursor: pointer;
+    }
+
+.btn-save {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 50px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease-in-out;
+}
+
+    .btn-save:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
+        cursor: pointer;
+    }
+
+legend {
+    margin-bottom: 30px !important;
+    margin-top: -10px !important;
+    padding-top: -25px !important;
+}
+
+.my-button-class1 {
+    margin-top: -19px;
+    margin-right: -12px;
+    margin-bottom: -90px;
+    padding-top: -5px;
+    padding-bottom: -5px;
+}
+.eventedit {
+    float: left;
+    width: 30%;
+    padding: 20px;
+    margin-bottom: 50px;
+}
+
+@media (max-width: 425px) {
+    .eventedit {
+        width: 100%;
+        margin-bottom: 0;
+    }
+}

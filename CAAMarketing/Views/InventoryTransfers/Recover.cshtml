@@ -1,0 +1,479 @@
+﻿@model CAAMarketing.Models.Transfer
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    ViewData["Title"] = "Edit";
+
+    //List<CAAMarketing.Models.Item> SelectedItems = ViewBag.SelectedItems;
+    //List<CAAMarketing.Models.InventoryTransfer> inventoryTransfers = ((IEnumerable<CAAMarketing.Models.InventoryTransfer>)ViewBag.invTransfers).ToList();
+
+
+}
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Edit OverView</title>
+</head>
+<body>
+    <center>
+        <h1 style="display:inline-block; vertical-align:middle;"><b><u>Recover Transfer: @Model.Title</u></b></h1>
+    </center>
+
+    <style>
+        h1, .tooltip {
+            display: inline-block;
+            vertical-align: middle;
+        }
+    </style>
+    <hr />
+    <partial name="_addMissingItemLogModal" />
+    <div class="card-body">
+        <div style="float:right;">
+            <a id="archive-button">
+                <input type="hidden" asp-for="Id" />
+                <input type="button" title="Click here to Recover the record" value="Recover" class="btn-save" id="modify-items-btn" />
+            </a>
+        </div>
+
+        <h3 style="display:inline-block;">Transfer Details:</h3>
+
+    </div>
+    <form style="display: flex; justify-content: space-between;">
+        <div class="form-group" style="width: 48%;">
+            <label asp-for="Title" class="control-label"></label>
+            <input asp-for="Title" class="form-control" readonly />
+        </div>
+        <div class="form-group" style="width: 48%;">
+            <label asp-for="TransferDate" class="control-label"></label>
+            <input asp-for="TransferDate" class="form-control" readonly />
+        </div>
+    </form>
+
+
+    <br />
+
+    <div class="card-body">
+
+        <div style="float:right;">
+        </div>
+        <h3 style="display:inline-block;">Locations/Quantities:</h3>
+
+
+        <hr />
+        @foreach (var GetToLocationId in Model.InventoryTransfers)
+        {
+            HttpContextAccessor.HttpContext.Session.SetString("ToLocationNameForEdit", GetToLocationId.ToLocation.Name);
+        }
+        <div class="selected-items">
+            <div class="row">
+                @foreach (var itemRes in Model.InventoryTransfers)
+                {
+                    <div class="col-md-4 col-lg-4" style="padding:15px">
+                        <div class="row">
+
+
+                            <input type="hidden" name="formId" value="@itemRes.Item.ID" />
+                            <fieldset class="item-fieldset-readonly" disabled="@itemRes.IsComfirmed" style="@(itemRes.IsComfirmed ? "background-color:#90EE90;" : "")">
+
+                                @{
+                                    var Saved = "Confirmed";
+                                    var Save = "Confirm";
+                                    var logged = "";
+                                    if (itemRes.IsComfirmed) { logged = "# Confirmed"; }
+                                    else { logged = "# To Confirm"; }
+
+                                }
+
+                                @{
+                                    if (itemRes.IsComfirmed)
+                                    {
+                                        <legend>Item #@itemRes.Item.ID: @itemRes.Item.Name (Comfirmed)</legend>
+                                    }
+                                    else
+                                    {
+                                        <legend>Item #@itemRes.Item.ID: @itemRes.Item.Name</legend>
+                                    }
+                                }
+
+
+
+
+
+
+
+                                <div class="row" style="margin-top:-100px;">
+                                    <div class="col-md-2">
+                                        @{
+                                            if (itemRes.Item.ItemThumbNail?.Content != null)
+                                            {
+                                                string imageBase64 = Convert.ToBase64String(itemRes.Item.ItemThumbNail.Content);
+                                                string imageSrc = string.Format("data:" + itemRes.Item.ItemThumbNail.MimeType + ";base64,{0}", imageBase64);
+                                                <img src="@imageSrc" alt="Item Picture of @itemRes.Item.Name" title="Item Picture of @itemRes.Item.Name" class="img-fluid avatar" />
+                                            }
+                                            else
+                                            {
+                                                <div>
+                                                    <img src="~/images/image-not-found_tm.png" alt="Image not found" title="Image not found" class="img-fluid avatar" />
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+                                    <div class="col-md-10">
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label>Location:</label>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <select class="form-control" name="@($"locations-{itemRes.Item.ID}")" id="@($"locations-{itemRes.Item.ID}")" disabled>
+
+                                                    <option value="@itemRes.FromLocation.Id"
+                                                        disabled="@(itemRes.FromLocationId != itemRes.FromLocationId)"
+                                                        data-quantity="@itemRes.Quantity"
+                                                        selected="@(itemRes.FromLocationId == itemRes.FromLocationId)">@itemRes.FromLocation.Name</option>
+
+                                                </select>
+
+
+                                                <input type="hidden" name="@($"locations-{itemRes.Item.ID}")" value="@itemRes.FromLocationId" />
+
+                                                @*@itemRes.Location.Name*@
+
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label for="@($"loggedout-quantity-{itemRes.Item.ID}")"># Shipped Out:</label>
+                                                @*<input value="" id="quantity-" name="itemId1" />*@
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+
+                                                    <input type="text" readonly class="form-control" value="" id="@($"loggedout-quantity-{itemRes.Item.ID}")">
+
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+
+                                            <input type="text" hidden="hidden" class="form-control" value="" id="@($"locationId-{itemRes.Item.ID}")" name="@($"locationId{itemRes.Item.ID}")" />
+                                            @if (itemRes.IsComfirmed)
+                                            {
+                                                <div class="col-md-6">
+                                                    <label for="@($"location-quantity-{itemRes.Item.ID}")">@logged</label>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <input type="text" class="form-control" value="@itemRes.ComfirmedQuantity">
+
+                                                    </div>
+                                                </div>
+
+                                            }
+                                            @*else
+                                        {
+                                        <div class="col-md-6">
+                                        <div class="form-group">
+                                        <input type="text" class="form-control" value="" id="@($"location-quantity-{itemRes.Item.ID}")" name="@($"itemId{itemRes.Item.ID}")">
+
+                                        </div>
+                                        </div>
+                                        }*@
+
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label for="@($"location-quantity-{itemRes.Id}")">To:</label>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <input type="text" class="form-control" readonly value="@itemRes.ToLocation.Name">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+
+
+
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <button hidden="hidden" id="addMissingItemLog" title="Add Supplier" data-bs-toggle="modal" data-bs-target="#addMissingItemLogModal" type="button">Add</button>
+
+
+
+
+
+
+
+
+    <div style="margin:auto;">
+        <div class="tooltip">
+            <a asp-action="Index">
+                <img src="~/images/icons8-go-back-24.png" alt="Back Icon" />
+                <span class="tooltiptext">Back</span>
+            </a>
+        </div>
+    </div>
+
+
+
+    @section Scripts{
+
+        <script>
+            $(function () {
+                $('#archive-button').on('click', function () {
+                    var transferId = $('#Id').val();
+                    $.ajax({
+                        url: '@Url.Action("Recover", "InventoryTransfers")',
+                        type: 'POST',
+                        data: { id: transferId },
+                        success: function (data) {
+                            if (data.success) {
+                                // redirect to InventoryTransfers Index page
+                                window.location.href = "/Archives/TransferArchivesIndex";
+
+                                // Handle success
+                            } else {
+                                // Handle failure
+                            }
+                        },
+                        error: function (xhr) {
+                            // Handle error
+                        }
+                    });
+                });
+            });
+        </script>
+
+
+
+        <script type="text/javascript">
+
+
+            $(document).ready(function () {
+                $('select[name^="locations-"]').each(function () {
+                    var selectedLocationId = $(this).val();
+                    var selectedLocationQuantity = $(this).find('option:selected').data('quantity');
+                    var itemID = $(this).attr('id').split('-')[1];
+                    var locationIdInput = $('#locationId-' + itemID);
+                    var totalStockInput = $('#location-quantity-' + itemID);
+                    var loggedOutInput = $('#loggedout-quantity-' + itemID);
+
+                    console.log(selectedLocationId);
+                    locationIdInput.val(selectedLocationId);
+                    totalStockInput.val(selectedLocationQuantity);
+                    loggedOutInput.val(selectedLocationQuantity);
+                });
+            });
+
+        </script>
+
+        <script type="text/javascript">
+            var message = '@TempData["InitateMissingItemLog"]';
+            if (message) {
+                console.log(message);
+                $('#addMissingItemLog').trigger('click');
+            }
+        </script>
+
+        <script src="~/js/refreshDDL.js"></script>
+
+        <script type="text/javascript">
+            $('#submitMissingItemLogCreate1').click(function (event) {
+                event.preventDefault();
+                var form = $('#createMissingItemLogForm');
+                if (form.valid()) {
+                    $.ajax({
+                        type: "POST",
+                        url: form.attr('action'),
+                        data: form.serialize(),
+                        success: function () {
+                            $('#addMissingItemLogModal').modal('hide');
+                            window.location.reload();
+                        },
+                        error: function () {
+                            alert("Create Failed.  There was a problem adding the record.");
+                        }
+                    });
+                }
+                return false;
+            });
+            $('#addMissingItemLogModal').on('hide.bs.modal', function () {
+                $('#createMissingItemLogForm').find("input[type=text], textarea, select").val("");//to clear the data in the popup
+            });
+        </script>
+
+    }
+
+</body>
+</html>
+
+
+<style>
+    .red-text {
+        color: red;
+    }
+</style>
+
+
+
+<style>
+
+    .selected-items {
+        flex-wrap: wrap;
+    }
+
+    .item-fieldset {
+        margin-bottom: 30px;
+        padding: 30px 20px;
+        border-radius: 10px;
+        border: 2px solid #ccc;
+        box-sizing: border-box;
+        background-color: #f9f9f9;
+        transition: all 1s ease;
+    }
+
+        .item-fieldset:hover {
+            background-color: #e9e9e9;
+            border: 4px solid #ccc;
+            cursor: pointer;
+        }
+
+        .item-fieldset legend {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .item-fieldset label {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .item-fieldset input[type="text"] {
+            font-size: 14px;
+            padding: 10px;
+        }
+
+        .item-fieldset .form-check {
+            margin-top: 10px;
+        }
+
+        .item-fieldset .form-check-input {
+            margin-right: 10px;
+        }
+
+
+    .btn-exit {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        color: white;
+        font-weight: bold;
+        padding: 10px 20px;
+        border-radius: 50px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease-in-out;
+    }
+
+        .btn-exit:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+            cursor: pointer;
+        }
+
+    .btn-save {
+        background-color: #28a745;
+        border-color: #28a745;
+        color: white;
+        font-weight: bold;
+        padding: 10px 20px;
+        border-radius: 50px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease-in-out;
+    }
+
+        .btn-save:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+            cursor: pointer;
+        }
+
+    legend {
+        margin-bottom: 30px !important;
+        margin-top: -10px !important;
+        padding-top: -25px !important;
+    }
+
+    .my-button-class1 {
+        margin-top: -19px;
+        margin-right: -12px;
+        margin-bottom: -90px;
+        padding-top: -5px;
+        padding-bottom: -5px;
+    }
+
+</style>
+
+<style>
+
+
+
+    .item-fieldset-readonly {
+        margin-bottom: 30px;
+        padding: 30px 20px;
+        border-radius: 10px;
+        border: 2px solid #ccc;
+        box-sizing: border-box;
+        background-color: #f9f9f9;
+        transition: all 1s ease;
+        pointer-events: none;
+        opacity: 0.7;
+    }
+
+        .item-fieldset-readonly:hover {
+            background-color: #e9e9e9;
+            border: 4px solid #ccc;
+            cursor: pointer;
+        }
+
+        .item-fieldset-readonly legend {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .item-fieldset-readonly label {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .item-fieldset-readonly input[type="text"] {
+            font-size: 14px;
+            padding: 10px;
+        }
+
+        .item-fieldset-readonly .form-check {
+            margin-top: 10px;
+        }
+
+        .item-fieldset-readonly .form-check-input {
+            margin-right: 10px;
+        }
+
+</style>

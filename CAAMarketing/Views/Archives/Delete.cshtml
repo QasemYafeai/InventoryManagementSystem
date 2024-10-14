@@ -1,69 +1,214 @@
-﻿@model CAAMarketing.Models.Inventory
+﻿@model CAAMarketing.Models.Item
 
 @{
     ViewData["Title"] = "Recover"  ;
 }
 
 <div class="delete">
-<h1>Are you sure you want to Recover <u>@Html.DisplayFor(model => model.Item.Name)</u> ?</h1>
-<div>
-    <h4>Item Details</h4>
-    <hr />
-    <dl class="row">
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Item.Name)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Item.Name)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Item.Supplier)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Item.Supplier.Name)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Item.Category)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Item.Category)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Cost)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Cost)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Quantity)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Quantity)
-        </dd>
+    <h1>Are you sure you want to Recover <u>@Html.DisplayFor(model => model.Name)</u> ?</h1>
+    <div>
+        <h4>Item Details</h4>
+        <hr />
 
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Location)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Location.Name)
-        </dd>
-            <dt class="col-sm-2">
-                @Html.DisplayNameFor(model => model.Location)
-            </dt>
-            <dd class="col-sm-10">
-                    @foreach (var c in Model.Item.ItemLocations)
+        <div class="row" style="margin:50px 0">
+            <div class="col-3">
+                @{
+                    if (Model.ItemImages?.Content != null)
                     {
-                        @c.Location.Name <br />
+                            string imageBase64 = Convert.ToBase64String(Model.ItemImages.Content);
+                            string imageSrc = string.Format("data:" + Model.ItemImages.MimeType + ";base64,{0}", imageBase64);
+                        <div class="item-image">
+                                <img src="@imageSrc" alt="Profile Picture of @Model.Name" title="Item Picture of @Model.Name" class="img-fluid rounded" />
+                        </div>
                     }
-            </dd>
+                    else
+                    {
+                        <div class="item-image">
+                            <img src="~/images/image-not-found .png" class="img-fluid rounded" />
+                        </div>
+                    }
+                    <div id="barcode-container" style="display: none;">
+                        @Html.Raw(ViewBag.BarcodeImage)
+                        <button class="print-button" id="print-btn" onclick="printBarcode()">Print Barcode</button>
+                    </div>
+                }
 
-    </dl>
+            </div>
+            <div class="col-4 dettop">
+                <dl class="row">
+                    <dt class="col-sm-5">
+                            @Html.DisplayNameFor(model => model.Name):
+                    </dt>
+                    <dd class="col-sm-7">
+                            @Html.DisplayFor(model => model.Name)
+                    </dd>
+                    <dt class="col-sm-5">
+                            @Html.DisplayNameFor(model => model.Description):
+                    </dt>
+                    <dd class="col-sm-7">
+                            @Html.DisplayFor(model => model.Description)
+                    </dd>
 
-    <form asp-action="Delete">
-        <input type="hidden" asp-for="Id" />
-        <input type="submit"  title="Click this to go to recover the item" value="Recover" class="btn-submit"/> |
-         <div class="tooltip"> <a asp-action="Index"> <img src="~/images/icons8-go-back-24.png" alt="Back Icon" /> <span class="tooltiptext">Back</span></a> </div>
-    </form>
+                    <dt class="col-sm-5">
+                            @Html.DisplayNameFor(model => model.Category):
+                    </dt>
+                    <dd class="col-sm-7">
+                            @Html.DisplayFor(model => model.Category.Name)
+                    </dd>
+                    <dt class="col-sm-5">
+                            @Html.DisplayNameFor(model => model.UPC):
+                    </dt>
+                    <dd class="col-sm-7">
+                            @Html.DisplayFor(model => model.UPC)
+                    </dd>
+
+                    <dt class="col-sm-5">
+                            @Html.DisplayNameFor(model => model.Cost):
+                    </dt>
+                    <dd class="col-sm-7">
+                            @Html.DisplayFor(model => model.Cost)
+                    </dd>
+
+                    <dt class="col-sm-5">
+                        Total Stock:
+                    </dt>
+                    <dd class="col-sm-7">
+                        @{
+                            int TotalStock = 0;
+                        }
+                        @{
+                            if (Model.Inventories.Count() == 0)
+                            {
+                                <p>None</p>
+                            }
+                            else
+                            {
+
+
+                                @foreach (var c in Model.Inventories)
+                                {
+                                    TotalStock += c.Quantity;
+                                }
+                                @TotalStock
+                            }
+
+                        }
+
+                    </dd>
+
+                </dl>
+            </div>
+            <div class="col-5 dettop">
+                <dl class="row">
+
+                    <dt class="col-sm-5">
+                            @Html.DisplayNameFor(model => model.DateReceived):
+                    </dt>
+                    <dd class="col-sm-7">
+                            @Html.DisplayFor(model => model.DateReceived)
+                    </dd>
+                    <dt class="col-sm-5">
+                            @Html.DisplayNameFor(model => model.Supplier):
+                    </dt>
+                    <dd class="col-sm-7">
+                            @Html.DisplayFor(model => model.Supplier.Name)
+                    </dd>
+                    <dt class="col-sm-5">
+                        Employee:
+                    </dt>
+                    <dd class="col-sm-7">
+                            @Html.DisplayFor(model => model.Employee.FullName)
+                    </dd>
+                    <dt class="col-sm-5">
+                        Last Modified By:
+                    </dt>
+                    <dd class="col-sm-7">
+                            @Html.DisplayFor(model => model.EmployeeNameUser)
+                    </dd>
+                    <dt class="col-md-5">
+                            @Html.DisplayNameFor(model => model.Archived)?
+                    </dt>
+                    <dd class="col-md-7">
+                        @{
+                                if (Model.Archived == true)
+                            {
+                                @:Yes
+                            }
+                            else
+                            {
+                                @:No
+                            }
+                        }
+                    </dd>
+                    <dt class="col-sm-5">
+                        Item Low Threshold:
+                    </dt>
+                    <dd class="col-sm-7">
+
+                            @Html.DisplayFor(model => model.Category.LowCategoryThreshold)
+                    </dd>
+                    <dt class="col-sm-5">
+                            @Html.DisplayNameFor(model => model.Notes):
+                    </dt>
+                    <dd class="col-sm-7">
+                            @Html.DisplayFor(model => model.Notes)
+                    </dd>
+
+                </dl>
+
+            </div>
+
+        </div>
+    </div>
+            <!-- Add the items table -->
+            <div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Location</th>
+                            <th>Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            foreach (var item in Model.Inventories)
+                            {
+                                <tr>
+                                    <td>@Html.DisplayFor(modelItem => item.Location.Name)</td>
+                                    <td>@Html.DisplayFor(modelItem => item.Quantity)</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        <form asp-action="Delete">
+            <input type="hidden" asp-for="ID" />
+                <input type="submit" title="Click this to go to recover the item" value="Recover" class="btn-save"/>  |
+             <div class="tooltip"> <a asp-action="Index"> <img src="~/images/icons8-go-back-24.png" alt="Back Icon" /> <span class="tooltiptext">Back</span></a> </div>
+        </form>
            
+    </div>
 </div>
-</div>
+
+                        <style>
+                            .btn-save {
+        background-color: #28a745;
+        border-color: #28a745;
+        color: white;
+        font-weight: bold;
+        padding: 10px 20px;
+        border-radius: 50px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease-in-out;
+    }
+
+        .btn-save:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+            cursor: pointer;
+        }
+                        </style>

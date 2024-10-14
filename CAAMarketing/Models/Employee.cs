@@ -9,6 +9,9 @@ namespace CAAMarketing.Models
     {
         public int ID { get; set; }
 
+        public string UserId { get; set; } 
+
+
         public string FullName
         {
             get
@@ -54,5 +57,13 @@ namespace CAAMarketing.Models
         public ICollection<Subscription> Subscriptions { get; set; }
 
         public ICollection<Item> Items { get; set; }
+
+        public string Password { get; set; }
+
+        public bool IsFirstLogin { get; set; }
+
+        public bool TwoFactorEnabled { get; set; }
+
+        public string PasswordHash { get; set; }
     }
 }

@@ -1,0 +1,475 @@
+﻿@model CAAMarketing.Models.Event
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    ViewData["Title"] = "Edit";
+
+    List<CAAMarketing.Models.Item> SelectedItems = ViewBag.SelectedItems;
+   List<CAAMarketing.Models.ItemReservation> eventReservations = ((IEnumerable<CAAMarketing.Models.ItemReservation>)ViewBag.eventReservations).ToList();
+
+
+}
+<link rel="stylesheet" href="~/css/EventEditOverview.css" asp-append-version="true" />
+
+<!-- Help Section -->
+<div class="container my-3">
+    <button type="button" class="btn btn-info btn-color-Create" data-bs-toggle="modal" data-bs-target="#eventHelpModal">
+        Need Help? Click here
+    </button>
+</div>
+<!-- Help Modal -->
+<div class="modal fade" id="eventHelpModal" tabindex="-1" aria-labelledby="eventHelpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventHelpModalLabel">How to use the Events page</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <i class="bi bi-pencil-fill text-primary"></i> <strong>Modify Selected Items:</strong>  Click the "Modify Selected Items" button to edit the selected items for the event. This button will be disabled if all items are logged.
+                    </div>
+               
+<div class="list-group-item">
+<i class="bi bi-list-check text-success"></i> <strong>Selected Items:</strong> The table on the right side of the page displays the items selected for the event. You can view the item name, category, and UPC.
+</div>
+<div class="list-group-item">
+<i class="bi bi-log-in text-info"></i> <strong>Log Back In Item:</strong> Click the "Log-In" button for an item to log back into it. The button will display "Logged In" if the item is already logged in.
+</div>
+<div class="list-group-item">
+<i class="bi bi-eye-fill text-primary"></i> <strong>View Item Thumbnail:</strong> The item thumbnail is displayed in the left column of the selected items table. If no image is available, a "Image not found" placeholder will be shown.
+</div>
+<div class="list-group-item">
+<i class="bi bi-sort-up-down text-secondary"></i> <strong>Sorting:</strong> Click on the column headers (Item, Category, UPC) in the selected items table to sort the items by the respective criteria.
+</div>
+     <div class="list-group-item">
+                        <i class="bi bi-pencil-square text-secondary"></i> <strong>Edit Event:</strong> Use the form on the left side of the page to edit the event's details. Fill in the required fields and click "Edit" to save your changes.
+</div>
+<div class="list-group-item">
+<i class="bi bi-arrow-return-left text-dark"></i> <strong>Back:</strong> Click the back icon at the bottom of the "Edit Event" card to return to the previous page.
+</div>
+</div>
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Close</button>
+</div>
+</div>
+</div>
+
+</div>
+
+
+
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Edit Overview</title>
+</head>
+<body>
+
+    @{
+            int count = 0;
+            int isTrue = 0;
+            bool allLogged = false;  
+            }     
+        @foreach (var itemRes in eventReservations)
+        {
+            count += 1;
+            if(itemRes.IsLoggedIn == true)
+            {
+                isTrue += 1;
+            }
+        }
+    @{
+        if(count == 0 ){ allLogged = false; }
+        else if (isTrue == count) { allLogged = true; }
+        }
+
+       <center>
+    <h1 style="display:inline-block; vertical-align:middle;"><b><u>Overview For Event: @Model.Name</u></b></h1>
+</center>
+
+<style>
+    h1, .tooltip {
+        display: inline-block;
+        vertical-align: middle;
+    }
+</style>
+    <hr /> 
+<partial name="_addMissingItemLogModal" />
+<div class="card-body">
+
+<div style="float:right;">
+    @{
+                    if(allLogged == true)
+                    {
+                        <p>Cant Modify Event Locations/Quantities, All Items Were Logged.</p>
+                    }
+                    else
+                    {
+                         <a asp-action="ChooseItemQuantitiesEdit">
+
+                             <input type="submit" title="Click here to modify the selected items" value="Modify Locations/Quantities" class="btn-submit" id="modify-items-btn"/>
+                            </a>
+                    }
+
+                }
+    
+ </div>
+<h3 style="display:inline-block;">Locations/Quantities:</h3>
+            
+ <hr />
+<div class="selected-items">
+    <div class="row">
+        @foreach (var itemRes in eventReservations)
+        {
+            <div class="col-md-4 col-lg-4" style="padding:15px">
+                <div class="row" >
+
+                    <input type="hidden" name="formId" value="@itemRes.Item.ID" />
+                    <fieldset class="item-fieldset" disabled="@itemRes.IsLoggedIn" style="@(itemRes.IsLoggedIn ? "background-color:#90EE90;" : "")">
+
+                                @{
+                                    bool disableLoginbtn = false;
+                                    if(itemRes.Event.ReturnEventDate > DateTime.Today)
+                                    {
+                                        disableLoginbtn = true;
+                                    }
+
+                        var Saved = "Logged In";
+                        var Save = "Log Back In";
+                        var logged = "";
+                        if (itemRes.IsLoggedIn) { logged = "# Logged-In"; }
+                        else { logged = "# To Log Back In"; }
+                                
+                    }
+                    <div class="row">
+                                            <div class="col-md-12">
+                                                @if(disableLoginbtn == false)
+                                                {
+                                                    <button class="btn btn-save float-end my-button-class1" title="click this to tlog back in the item" type="submit" id="submit-@itemRes.Item.ID" onclick="window.location.href='/Events/LogBackInMultiple/@itemRes.EventId'">
+                                                            <span style="display: inline-block; pointer-events: none;">
+                                                                @if (itemRes.IsLoggedIn)
+                                                                {
+                                                                    @Saved
+                                                                    ;
+                                                                }
+                                                                else
+                                                                {
+                                                                    @Save
+                                                                    ;
+                                                                }
+                                                            </span>
+                                                        </button>
+                                                }
+                                        
+                                            </div>
+                                        </div>
+                                        <legend style="padding-top:-100px;"><b><u>@itemRes.Item.Name</u></b></legend>
+
+
+                    <div class="row">
+                        <div class="col-md-2">
+                            @{
+                                if (itemRes.Item.ItemThumbNail?.Content != null)
+                                {
+                                    string imageBase64 = Convert.ToBase64String(itemRes.Item.ItemThumbNail.Content);
+                                    string imageSrc = string.Format("data:" + itemRes.Item.ItemThumbNail.MimeType + ";base64,{0}", imageBase64);
+                                    <img src="@imageSrc" alt="Item Picture of @itemRes.Item.Name" title="Item Picture of @itemRes.Item.Name" class="img-fluid avatar" />
+                                }
+                                else
+                                {
+                                    <div>
+                                        <img src="~/images/image-not-found_tm.png" alt="Image not found" title="Image not found" class="img-fluid avatar" />
+                                    </div>
+                                }
+                            }
+                        </div>
+                        <div class="col-md-10">
+                                    
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label>Location:</label>
+                                </div>
+                                <div class="col-md-6">
+                                    <select class="form-control" name="@($"locations-{itemRes.Item.ID}")" id="@($"locations-{itemRes.Item.ID}")" disabled>
+                                        <option value="">--Select a location--</option>
+
+                                            <option value="@itemRes.Location.Id" 
+                                                    disabled="@(itemRes.LocationID != itemRes.LocationID)"
+                                                    data-quantity="@itemRes.Quantity"
+                                                    selected="@(itemRes.LocationID == itemRes.LocationID)">@itemRes.Location.Name</option>
+                                                
+                                    </select>
+
+
+                                    <input type="hidden" name="@($"locations-{itemRes.Item.ID}")" value="@itemRes.LocationID" />
+
+                                    @*@itemRes.Location.Name*@
+
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="@($"loggedout-quantity-{itemRes.Item.ID}")"># Logged Out:</label>
+                                    @*<input value="" id="quantity-" name="itemId1" />*@
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+
+                                        <input type="text" readonly class="form-control" value="@itemRes.Quantity" id="@($"loggedout-quantity-{itemRes.Item.ID}")" >
+
+                                                
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+
+                                <input type="text" hidden="hidden" class="form-control" value="" id="@($"locationId-{itemRes.Item.ID}")" name="@($"locationId{itemRes.Item.ID}")" />
+                                @if (itemRes.IsLoggedIn)
+                                {
+                                <div class="col-md-6">
+                                    <label for="@($"location-quantity-{itemRes.Item.ID}")">@logged</label>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <input type="text" class="form-control" value="@itemRes.LoggedInQuantity">
+                                                
+                                    </div>
+                                </div>
+                                            
+                                }
+
+                            </div>
+
+                            
+
+
+
+                        </div>
+                    </div>
+                    <br/>
+
+
+            </div>
+        </div>
+        }
+    </div>
+</div>
+</div>
+    <button hidden="hidden" id="addMissingItemLog" title="Add Supplier" data-bs-toggle="modal" data-bs-target="#addMissingItemLogModal" type="button">Add</button>
+
+
+    @{
+        bool disableEdits = false;
+    }
+    @foreach (var itemRes in eventReservations)
+    {
+        if(itemRes.IsLoggedIn == true)
+        {
+            disableEdits = true;
+            break;
+        }
+
+
+    }
+
+
+
+    <div class="card eventedit" style="">
+        <div class="card-body">
+            <h3> Edit Event: (@Model.Name)</h3>
+            <hr />
+            <div class="col-md-12">
+                <form asp-action="Edit">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <input type="hidden" asp-for="ID" />
+                    <input type="hidden" asp-for="RowVersion" />
+                    @*<input type="hidden" asp-for="RowVersion" />*@
+                    <div class="form-group">
+                        <label asp-for="Name" class="control-label required-label"></label>
+                        <input asp-for="Name" class="form-control" required/>
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Description" class="control-label"></label>
+                        <textarea asp-for="Description" class="form-control"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="ReservedEventDate" class="control-label required-label"></label>
+                        <input asp-for="ReservedEventDate" class="form-control" required disabled="@disableEdits" />
+                        <span asp-validation-for="ReservedEventDate" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="ReturnEventDate" class="control-label required-label"></label>
+                        <input asp-for="ReturnEventDate" class="form-control" required disabled="@disableEdits" />
+                        <span asp-validation-for="ReturnEventDate" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="location" class="control-label required-label"></label>
+                        <input asp-for="location" class="form-control" required/>
+                        <span asp-validation-for="location" class="text-danger"></span>
+                    </div>
+                    <br />
+                    <div style="margin:auto;">
+                        <input type="submit" title="Click here to save the edits" value="Edit" class="btn-submit" />
+                        <div class="tooltip"> <a asp-action="Index"> <img src="~/images/icons8-go-back-24.png" alt="Back Icon" /> <span class="tooltiptext">Back</span></a> </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="card float-right" style="padding:20px;">
+        <div class="card-body" >
+            <div style="float:right;">
+                @{
+                    if(allLogged == true)
+                    {
+                        <p>Cant Modify Selected Items, All Items Were Logged.</p>
+                    }
+                    else
+                    {
+                        <a asp-action="EditSelectItems">
+                            <input type="submit" title="Click here to modify the selected items" value="Modify Selected Items" class="btn-submit" id="modify-items-btn"/>
+                        </a>
+                    }
+
+                }
+
+                
+
+        </div>
+
+
+        <h3 style="display:inline-block;">Selected Items:</h3>
+
+            <hr />
+            <table class="table table-striped table-hover" >
+            <thead class="thead-light" >
+                <tr>
+                    <th></th>
+                    <th>
+                        <button type="submit" name="actionButton" title="click here to sort by event" class="btn btn-link">Item</button>
+                    </th>
+                    <th>
+                        <button type="submit" name="actionButton" title="click here to sort by category" class="btn btn-link">Category</button>
+                    </th>
+                    <th>
+                        <button type="submit" name="actionButton" title="click here to sort by UPC" class="btn btn-link">UPC</button>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in SelectedItems)
+                {
+                    <tr class="@((item.isSlectedForEvent) ? "table-success" : "")">
+                        <td >
+                            @{
+                                if (item.ItemThumbNail?.Content != null)
+                                {
+                                    string imageBase64 = Convert.ToBase64String(item.ItemThumbNail.Content);
+                                    string imageSrc = string.Format("data:" + item.ItemThumbNail.MimeType + ";base64,{0}", imageBase64);
+                                    <img src="@imageSrc" alt="Item Picture of @item.Name" title="Item Picture of @item.Name" class="img-fluid avatar" />
+                                }
+                                else
+                                {
+                                    @:<div>
+                                        <img src="~/images/image-not-found_tm.png" alt="Image not found" title="Image not found" class="img-fluid avatar" style="height:60px; width:60px;"/>
+                                    @:</div>
+                                }
+                            }
+                        </td>
+                        <td>@Html.DisplayFor(modelItem => item.Name)</td>
+                        <td>@Html.DisplayFor(modelItem => item.Category.Name)</td>
+                        <td>@Html.DisplayFor(modelItem => item.UPC)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        </div>
+    </div>
+
+ 
+
+
+
+
+
+
+@section Scripts{
+
+    <script type="text/javascript">
+
+      const modifyItemsBtn = document.getElementById('modify-items-btn');
+      modifyItemsBtn.addEventListener('click', function() {
+        // Your custom function here
+       localStorage.setItem("TypeOfOperationReservation", "Edit");
+      });
+        
+
+
+        $(document).ready(function () {
+            $('select[name^="locations-"]').each(function () {
+                var selectedLocationId = $(this).val();
+                var selectedLocationQuantity = $(this).find('option:selected').data('quantity');
+                var itemID = $(this).attr('id').split('-')[1];
+                var locationIdInput = $('#locationId-' + itemID);
+                var totalStockInput = $('#location-quantity-' + itemID);
+                var loggedOutInput = $('#loggedout-quantity-' + itemID);
+
+                console.log(selectedLocationId);
+                locationIdInput.val(selectedLocationId);
+                totalStockInput.val(selectedLocationQuantity);
+                loggedOutInput.val(selectedLocationQuantity);
+            });
+        });
+
+    </script>
+
+    <script type="text/javascript">
+        var message = '@TempData["InitateMissingItemLog"]';
+        if (message) {
+            console.log(message);
+            $('#addMissingItemLog').trigger('click');
+        }
+    </script>
+
+    <script src="~/js/refreshDDL.js"></script>
+
+    <script type="text/javascript">
+        $('#submitMissingItemLogCreate1').click(function (event) {
+            event.preventDefault();
+            var form = $('#createMissingItemLogForm');
+            if (form.valid()) {
+                $.ajax({
+                    type: "POST",
+                    url: form.attr('action'),
+                    data: form.serialize(),
+                    success: function () {
+                        $('#addMissingItemLogModal').modal('hide');
+                        window.location.reload();
+                    },
+                    error: function () {
+                        alert("Create Failed.  There was a problem adding the record.");
+                    }
+                });
+            }
+            return false;
+        });
+        $('#addMissingItemLogModal').on('hide.bs.modal', function () {
+            $('#createMissingItemLogForm').find("input[type=text], textarea, select").val("");//to clear the data in the popup
+        });
+    </script>
+
+}
+
+</body>
+</html>
+
+                    

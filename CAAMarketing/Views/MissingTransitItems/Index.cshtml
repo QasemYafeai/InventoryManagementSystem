@@ -1,0 +1,45 @@
+﻿@model IEnumerable<CAAMarketing.Models.MissingTransitItem>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<div class="container-fluid">
+    <div class="table-responsive">
+        <div class="table-wrapper">
+            <div class="table-title d-flex justify-content-between align-items-center">
+                <h1>Discrepancy Transfer logs</h1>
+            </div>
+            <table class="table table-hover">
+                <thead class="thead-light">
+                    <tr>
+                        <th>Item</th>
+                        <th>From Location</th>
+                        <th>To Location</th>
+                        <th>Quantity Missing</th>
+                        <th>Reason</th>
+                        <th>Date</th>
+                        <th>Employee</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var missingItemTrans in Model)
+                    {
+                        <tr>
+                            <td>@missingItemTrans.Item.Name</td>
+                            <td>@missingItemTrans.FromLocation.Name</td>
+                            <td>@missingItemTrans.ToLocation.Name</td>
+                            <td>@missingItemTrans.Quantity</td>
+                            <td>@missingItemTrans.Reason</td>
+                            <td>@missingItemTrans.Date</td>
+
+                            <td>@missingItemTrans.Employee.FullName</td>
+                            @*<td><a asp-action="Details" title="Click this to go to details" class="padding-for-actions" asp-route-id="@missingItemTrans.ID">Details</a> </td>*@
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using CAAMarketing.ViewModels;
+using System.ComponentModel.DataAnnotations;
 using System.Xml.Linq;
 
 namespace CAAMarketing.Models
@@ -20,7 +21,7 @@ namespace CAAMarketing.Models
             }
         }
 
-        [Display(Name = "Cost")]
+        [Display(Name = "Cost Per Item")]
         [Required(ErrorMessage = "You must enter a cost.")]
         [DataType(DataType.Currency)]
         public decimal Cost { get; set; }
@@ -39,6 +40,7 @@ namespace CAAMarketing.Models
         public int LocationID { get; set; }
         public Location Location { get; set; }
 
+        public int BaseStockLevel { get; set; } = 100;
 
         public bool IsLowInventory { get; set; }
 

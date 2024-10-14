@@ -1,0 +1,198 @@
+﻿/* for home page*/
+.welcomepagediv1 {
+    width: 100%;
+    background-image: linear-gradient(rgba(0, 0, 0, 0.0), rgba(255, 255, 255, 0.2)), url('../images/CAA-Niagara-TruckFleet-Scroller-3000x750_0.jpg');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    padding: 50px 0 100px 0;
+}
+
+.welcomepagediv1 h1 {
+    margin: 50px 350px 0 350px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    text-decoration: none;
+    color: white;
+    background-color: rgba(48, 83, 145, 0.9)
+}
+@media (min-width: 1024px) {
+    .welcomepagediv1 h1 {
+        margin: 50px 150px 0 150px;
+    }
+}
+.rowAct {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    margin-top: 25px;
+}
+
+.colAct {
+    box-shadow: 4px 4px 8px 4px rgba(0, 0, 0, 0.3);
+    background-color: white;
+    color: black;
+    padding: 1em 2em;
+    text-align: center;
+    margin: 0 25px 0 25px;
+    cursor: pointer;
+    position: relative;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    animation: slide-right 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+    .colAct::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 0;
+        background-color: rgba(48, 83, 145, 0.9); /* Adjust the color as needed */
+        transition: height 0.3s ease;
+        z-index: -1;
+        color: white;
+    }
+
+    .colAct:hover::after {
+        height: 100%;
+
+    }
+
+    .colAct:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .colAct:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    .colAct:nth-child(4) {
+        animation-delay: 0.6s;
+    }
+
+/* Define the slide-right animation */
+@keyframes slide-right {
+    0% {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateX(0%);
+        opacity: 1;
+    }
+}
+
+@media(max-width: 1390px) {
+    .rowAct {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        margin-top: 25px;
+    }
+
+    .colAct {
+        margin-bottom: 15px;
+    }
+}
+
+@media(max-width: 425px) {
+    .rowAct {
+        display: grid;
+        grid-template-columns: repeat(1, 1fr);
+        margin-top: 25px;
+    }
+
+    .colAct {
+        margin-bottom: 15px;
+    }
+}
+
+.colAct:hover {
+    background-color: white;
+    transform: translateY(-2px);
+    color: #ffffff; /* Change color to white when hovered */
+}
+
+
+
+
+.linkSpanner {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+    .linkSpanner:hover {
+    }
+
+/*Popup for home page when not logged in*/
+
+.overlay {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.7);
+    transition: opacity 500ms;
+    visibility: hidden;
+    opacity: 0;
+}
+
+    .overlay:target {
+        visibility: visible;
+        opacity: 1;
+    }
+
+.popup {
+    margin: 70px auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 5px;
+    width: 30%;
+    position: relative;
+    transition: all 5s ease-in-out;
+}
+
+    .popup h2 {
+        margin-top: 0;
+        color: #333;
+        font-family: Tahoma, Arial, sans-serif;
+    }
+
+    .popup .close {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        transition: all 200ms;
+        font-size: 30px;
+        font-weight: bold;
+        text-decoration: none;
+        color: #333;
+    }
+
+        .popup .close:hover {
+            color: #06D85F;
+        }
+
+    .popup .content {
+        max-height: 30%;
+        overflow: auto;
+    }
+
+@media screen and (max-width: 700px) {
+    .box {
+        width: 70%;
+    }
+
+    .popup {
+        width: 70%;
+    }
+}
+
+

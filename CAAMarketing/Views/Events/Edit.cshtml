@@ -13,58 +13,58 @@
 </head>
 <body>
 
-<div class="cont">
-    <div class="edtext">
+    <div class="cont">
+        <div class="edtext">
             <h3>Edit:(@Model.Name)</h3>
             <hr />
-        <div class="col-md-12">
-        <form asp-action="Edit">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="ID" />
-            <input type="hidden" asp-for="RowVersion" />
-            @*<input type="hidden" asp-for="RowVersion" />*@
-            <div class="form-group">
-                <label asp-for="Name" class="control-label"></label>
-                        <input asp-for="Name" class="form-control" required style="border-color: red" />
-                <span asp-validation-for="Name" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Description" class="control-label"></label>
-                <textarea asp-for="Description" class="form-control"></textarea>
-                <span asp-validation-for="Description" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Date" class="control-label"></label>
-                        <input asp-for="Date" class="form-control" required style="border-color: red" />
-                <span asp-validation-for="Date" class="text-danger"></span>
+            <div class="col-md-12">
+                <form asp-action="Edit">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <input type="hidden" asp-for="ID" />
+                    <input type="hidden" asp-for="RowVersion" />
+                    @*<input type="hidden" asp-for="RowVersion" />*@
+                    <div class="form-group">
+                        <label asp-for="Name" class="control-label required-label"></label>
+                        <input asp-for="Name" class="form-control" required />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Description" class="control-label"></label>
+                        <textarea asp-for="Description" class="form-control"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Date" class="control-label required-label"></label>
+                        <input asp-for="Date" class="form-control" required />
+                        <span asp-validation-for="Date" class="text-danger"></span>
 
-            </div>
-            <div class="form-group">
-                <label asp-for="ReservedEventDate" class="control-label"></label>
-                <input asp-for="ReservedEventDate" class="form-control" required style="border-color: red" />
-                <span asp-validation-for="ReservedEventDate" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="ReservedEventDate" class="control-label required-label"></label>
+                        <input asp-for="ReservedEventDate" class="form-control" required />
+                        <span asp-validation-for="ReservedEventDate" class="text-danger"></span>
 
-            </div>
-            <div class="form-group">
-                <label asp-for="ReturnEventDate" class="control-label"></label>
-                <input asp-for="ReturnEventDate" class="form-control" required style="border-color: red" />
-                <span asp-validation-for="ReturnEventDate" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="ReturnEventDate" class="control-label required-label"></label>
+                        <input asp-for="ReturnEventDate" class="form-control" required />
+                        <span asp-validation-for="ReturnEventDate" class="text-danger"></span>
 
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="location" class="control-label required-label"></label>
+                        <input asp-for="location" class="form-control" required />
+                        <span asp-validation-for="location" class="text-danger"></span>
+                    </div>
+                    <br />
+                    <div style="margin:auto;">
+                        <input type="submit" title="Click here to save the edits" value="Save" class="btn-submit" />
+                        <div class="tooltip"> <a asp-action="Index"> <img src="~/images/icons8-go-back-24.png" alt="Back Icon" /> <span class="tooltiptext">Back</span></a> </div>
+                    </div>
+                </form>
             </div>
-            <div class="form-group">
-                <label asp-for="location" class="control-label"></label>
-                        <input asp-for="location" class="form-control" required style="border-color: red" />
-                <span asp-validation-for="location" class="text-danger"></span>
-            </div>
-            <br/>
-                    <div style="margin:auto;"> 
-                            <input type="submit" title="Click here to save the edits" value="Save" class="btn-submit" />
-                            <div class="tooltip"> <a asp-action="Index"> <img src="~/images/icons8-go-back-24.png" alt="Back Icon" /> <span class="tooltiptext">Back</span></a> </div>
-                        </div>
-        </form>
-             </div>
-            </div>
-</div>
+        </div>
+    </div>
 
 </body>
 </html>

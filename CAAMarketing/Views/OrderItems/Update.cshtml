@@ -4,58 +4,60 @@
     ViewData["Title"] = "Edit";
 }
 <div class="cont" style="padding-top:25px; padding-bottom:25px">
-<div class="deimage">
-    <h2>Update Order for: @Model.Item.Name</h2>
+    <div class="deimage">
+        <h2>Update Order for: @Model.Item.Name</h2>
 
-    <hr />
-    <form asp-action="Update">
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-        <input type="hidden" asp-for="ID" />
-        <div class="deimage2">
-            <div class="col-md-12">
-                <input type="hidden" name="ItemID" value="@Model.ItemID" />
-                <div class="form-group">
-                    <label asp-for="Quantity" class="control-label"></label>
-                        <input asp-for="Quantity" class="form-control" required style="border-color: red" />
-                    <span asp-validation-for="Quantity" class="text-danger"></span>
-                </div>
+        <hr />
+        <form asp-action="Update">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="ID" />
+            <div class="deimage2">
+                <div class="col-md-12">
+                    <input type="hidden" name="ItemID" value="@Model.ItemID" />
                     <div class="form-group">
-                        <label asp-for="DateMade" class="control-label"></label>
-                        <input asp-for="DateMade" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")" required style="border-color: red" />
-                        <span asp-validation-for="DateMade" class="text-danger"></span>
+                        <label asp-for="Quantity" class="control-label required-label"></label>
+                        <input asp-for="Quantity" class="form-control" required />
+                        <span asp-validation-for="Quantity" class="text-danger"></span>
                     </div>
-                <div class="form-group">
-                    <label asp-for="DeliveryDate" class="control-label"></label>
-                        <input asp-for="DeliveryDate" class="form-control" required style="border-color: red" />
-                    <span asp-validation-for="DeliveryDate" class="text-danger"></span>
-                </div>
-                <div class="form-group">
-                    <label asp-for="Cost" class="control-label"></label>
-                        <input asp-for="Cost" class="form-control" required style="border-color: red" />
-                    <span asp-validation-for="Cost" class="text-danger"></span>
-                </div>
+@*                    <div class="form-group">
+                        <label asp-for="DateMade" class="control-label required-label"></label>
+                        <input asp-for="DateMade" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")" required readonly/>
+                        <span asp-validation-for="DateMade" class="text-danger"></span>
+                    </div>*@
+                    <div class="form-group">
+                        <label asp-for="DeliveryDate" class="control-label required-label"></label>
+                        <input asp-for="DeliveryDate" class="form-control" required />
+                        <span asp-validation-for="DeliveryDate" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Cost" class="control-label required-label"></label>
+                        <input asp-for="Cost" class="form-control" required />
+                        <span asp-validation-for="Cost" class="text-danger"></span>
+                    </div>
                     <div class="form-group">
                         <label asp-for="LocationID" class="control-label"></label>
                         <select asp-for="LocationID" class="form-control" asp-items="ViewBag.LocationID" disabled readonly></select>
                         <span asp-validation-for="LocationID" class="text-danger"></span>
                     </div>
 
-                <div class="form-group">
-                    </br>
-                    <input type="submit" title="Click this to save" value="Save" class="btn btn-primary" /> |
-                     <a href='@ViewData["returnURL"]' title="Click this to go back to the item details" class="padding-for-actions div-back">Back</a> | 
-                    <a asp-controller="OrderItems" title="Click this to go back the Inventory List" class="padding-for-actions div-back" asp-action="Index" class="">Back to Inventory</a>
+                    <div class="form-group">
+                        </br>
+                        <input type="submit" title="Click this to save" value="Save" class="btn btn-primary" /> |
+                        <a href='@ViewData["returnURL"]' title="Click this to go back to the item details" class="padding-for-actions div-back">Back</a> |
+                        <a asp-controller="OrderItems" title="Click this to go back the Inventory List" class="padding-for-actions div-back" asp-action="Index" class="">Back to Inventory</a>
+                    </div>
                 </div>
             </div>
-        </div>
-    </form>
+        </form>
 
 
-       
 
-   
-</div>
+
+
+    </div>
 </div>
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }

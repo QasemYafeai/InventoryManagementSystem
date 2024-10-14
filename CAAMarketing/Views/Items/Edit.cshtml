@@ -56,8 +56,8 @@
                 <input type="hidden" asp-for="RowVersion" />
 
                 <div class="cols">
-                    <label asp-for="Name" class="control-label"></label>
-                    <input asp-for="Name" class="form-control" required style="border-color: red"/>
+                    <label asp-for="Name" class="control-label required-label"></label>
+                    <input asp-for="Name" class="form-control" required/>
                     <span asp-validation-for="Name" class="text-danger"></span>
                 </div>
                 <div class="cols">
@@ -68,29 +68,29 @@
 <div class="cols">
     <label class="control-label">Choose Supplier</label>
     <div class="input-group">
-        <select asp-for="SupplierID" class="form-control select2" asp-items="ViewBag.SupplierID" required style="border-color: red">
+        <select asp-for="SupplierID" class="form-control select2 required-label" asp-items="ViewBag.SupplierID" required>
             <option value="">None</option>
         </select>
         <button class="btn btn-plus" id="nowAddSupplier" title="Add Supplier" data-bs-toggle="modal" data-bs-target="#addSupplierModal" type="button"></button>
     </div>
 </div>
                     <div class="cols">
-    <label class="control-label">Choose Category</label>
+    <label class="control-label required-label">Choose Category</label>
     <div class="input-group">
-        <select asp-for="CategoryID" class="form-control select2" asp-items="ViewBag.CategoryID" required style="border-color: red">
+        <select asp-for="CategoryID" class="form-control select2" asp-items="ViewBag.CategoryID" required>
             <option value="">None</option>
         </select>
         <button class="btn btn-plus" id="nowAddCategory" title="Add Category" data-bs-toggle="modal" data-bs-target="#addCategoryModal" type="button"></button>
     </div>
 </div>
                 <div class="cols">
-                    <label asp-for="UPC" class="control-label"></label>
-                    <input asp-for="UPC" class="form-control" required style="border-color: red"/>
+                    <label asp-for="UPC" class="control-label required-label"></label>
+                    <input asp-for="UPC" class="form-control" required/>
                     <span asp-validation-for="UPC" class="text-danger"></span>
                 </div>
                 <div class="cols">
-                    <label asp-for="DateReceived" class="control-label"></label>
-                    <input asp-for="DateReceived" class="form-control" required style="border-color: red"/>
+                    <label asp-for="DateReceived" class="control-label required-label"></label>
+                    <input asp-for="DateReceived" class="form-control" required/>
                     <span asp-validation-for="DateReceived" class="text-danger"></span>
                 </div>
 

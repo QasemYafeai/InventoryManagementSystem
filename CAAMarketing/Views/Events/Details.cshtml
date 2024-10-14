@@ -56,6 +56,32 @@
 
     </dl>
 </div>
+        <!-- Add the items table -->
+        <div>
+            <h4>Items for the Event</h4>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Item Name</th>
+                        <th>Quantity</th>
+                        <th>Location</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (ViewData["Items"] is List<CAAMarketing.Models.ItemReservation> items)
+                    {
+                        foreach (var item in items)
+                        {
+                            <tr>
+                                <td>@Html.DisplayFor(modelItem => item.Item.Name)</td>
+                                <td>@Html.DisplayFor(modelItem => item.Quantity)</td>
+                                <td>@Html.DisplayFor(modelItem => item.Location.Name)</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
 <div>
             <a asp-action="Edit" title="Click this to edit" class="link-action" asp-route-id="@Model?.ID">Edit</a> |
             <div class="tooltip"> <a asp-action="Index"> <img src="~/images/icons8-go-back-24.png" alt="Back Icon" /> <span class="tooltiptext">Back</span></a> </div>

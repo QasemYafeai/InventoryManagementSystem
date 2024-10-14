@@ -38,7 +38,7 @@ namespace CAAMarketing.Utilities
                 //Get the saved defalult if there is one
                 pageSize = Convert.ToInt32(httpContext.Request.Cookies["DefaultpageSizeValue"]);
             }
-            return (pageSize == 0) ? 5 : pageSize;//Neither Selected or in Cookie so go with default
+            return (pageSize == 0) ? 10 : pageSize;//Neither Selected or in Cookie so go with default
         }
         /// <summary>
         /// Creates a SelectList for choices for page size
@@ -47,7 +47,7 @@ namespace CAAMarketing.Utilities
         /// <returns></returns>
         public static SelectList PageSizeList(int? pageSize)
         {
-            return new SelectList(new[] { "3", "5", "10", "20", "30", "40", "50", "100", "500" }, pageSize.ToString());
+            return new SelectList(new[] { "5", "10", "20", "30", "40", "50", "100", "500" }, pageSize.ToString());
         }
     }
 }

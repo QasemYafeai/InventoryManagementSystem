@@ -14,33 +14,33 @@
             <input type="hidden" asp-for="Id" />
 
             <div class="form-group">
-                <label asp-for="EventId" class="control-label"></label>
-                <select asp-for="EventId" class="form-control" asp-items="ViewBag.EventId" required style="border-color: red"></select>
+                <label asp-for="EventId" class="control-label required-label"></label>
+                <select asp-for="EventId" class="form-control" asp-items="ViewBag.EventId" required></select>
             </div>
 
             <div class="form-group">
-                <label asp-for="ItemId" class="control-label"></label>
-                <select asp-for="ItemId" class="form-control" asp-items="ViewBag.ItemId" required style="border-color: red"></select>
+                <label asp-for="ItemId" class="control-label required-label"></label>
+                <select asp-for="ItemId" class="form-control" asp-items="ViewBag.ItemId" required></select>
             </div>
 
             <div class="form-group">
-                <label asp-for="LocationID" class="control-label"></label>
-                <select asp-for="LocationID" class="form-control" asp-items="ViewBag.LocationID" required style="border-color: red"></select>
+                <label asp-for="LocationID" class="control-label required-label"></label>
+                <select asp-for="LocationID" class="form-control" asp-items="ViewBag.LocationID" required></select>
             </div>
 
             <div class="form-group">
-                <label asp-for="Quantity" class="control-label"></label>
-                <input asp-for="Quantity" class="form-control" required style="border-color: red" />
+                <label asp-for="Quantity" class="control-label required-label"></label>
+                <input asp-for="Quantity" class="form-control" required />
             </div>
 
             <div class="form-group">
-                <label asp-for="ReservedDate" class="control-label"></label>
-                <input asp-for="ReservedDate" class="form-control" required style="border-color: red" />
+                <label asp-for="ReservedDate" class="control-label required-label"></label>
+                <input asp-for="ReservedDate" class="form-control" required />
             </div>
 
             <div class="form-group">
-                <label asp-for="ReturnDate" class="control-label"></label>
-                <input asp-for="ReturnDate" class="form-control" required style="border-color: red" />
+                <label asp-for="ReturnDate" class="control-label required-label"></label>
+                <input asp-for="ReturnDate" class="form-control" required />
             </div>
 
             <button type="submit" class="btn btn-primary">Save</button>

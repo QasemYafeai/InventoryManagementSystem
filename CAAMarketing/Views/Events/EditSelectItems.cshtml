@@ -1,0 +1,419 @@
+﻿@model IEnumerable<CAAMarketing.Models.Item>
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+
+    ViewData["Title"] = "Create";
+    //CAAMarketing.Models.Item SelectedItems = (CAAMarketing.Models.Item)ViewBag.SelectedItems
+}
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.14.0/css/all.css" integrity="sha384-HzLeBuhoNPvSl5KYnjx0BT+WB0QEEqLprO+NBkkk5gbc67FTaL7XIGa2w1L0Xbgc" crossorigin="anonymous">
+<link rel="stylesheet" href="~/css/SelectItemsevent.css" asp-append-version="true" />
+<div class="container">
+    <ul class="progressbar">
+        <li class="active">
+            <p>Edit Selected Items</p>
+        </li>
+        <li>
+            <p>Edit Locations/Quantities</p>
+        </li>
+        <li>
+            <p>Event OverView</p>
+        </li>
+    </ul>
+</div>
+
+        <div class="deimage">
+
+            <h1 style="padding-top:15px"><u><b>Edit Selected Items:</b></u></h1><h2>Remove Or Add Items For The Event :</h2>
+            <hr />
+
+         <div/>
+          <button type="button" class="btn btn-primary" title="Click this to go Back To Overview" onclick="redirectToOverview()" style="background-color:red;">Back To Overview</button>
+
+            <script>
+                function redirectToOverview() {
+                    var eventID = '@HttpContextAccessor.HttpContext.Session.GetString("EventIDForEditOverView")'; // Get the event ID from the session
+                    var url = '@Url.Action("EditOverview", "Events", new { id = "__id__" })'.replace('__id__', eventID); // Generate the URL with the event ID
+                    window.location.href = url; // Redirect the user to the generated URL
+                }
+            </script>
+
+
+            <button class="btn btn-success @(ViewData["Filtering"])" type="button" data-bs-toggle="collapse" id="filterToggle" data-bs-target="#collapseFilter" aria-expanded="false" aria-controls="collapseFilter" title="Click this to filter/search">
+            <i>Filter/Search</i>
+        </button>
+    <button type="button" class="btn btn-primary" title="Click this to Save/Continue" onclick="window.location.href='@Url.Action("ChooseItemQuantitiesEdit", "Events")'">Save/Continue</button>
+
+
+        </div>
+        <br/>
+
+
+       <form method="get" asp-action="EditSelectItems">
+        <div class="collapse @(ViewData["Filtering"])" id="collapseFilter">
+            <div class="card card-body">
+                <div class="form-group col-md-4">
+                        <label class="control-label">Filter by Category:</label>
+                        @Html.DropDownList("CategoryID", null, "All Categories", htmlAttributes: new { @class = "form-control" })
+                    </div>
+                <div class="row">
+                    <div class="form-group col-md-4">
+                        <label class="control-label">Search Item:</label>
+                    @Html.TextBox("SearchString", null, new { @class = "form-control" })
+                    </div>
+                    <div class="form-group col-md-4 align-self-end">
+                        <input type="submit" name="actionButton" value="Filter" title="click here to filter" class="btn btn-success" />
+                    <a asp-action="SelectItems" title="Click here to clear the filter" class="btn btn-outline-dark">Clear</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+<p style="padding-top:10px;"></p>
+</form>
+
+
+<!-- Help Button -->
+<div class="container my-3">
+    <button type="button" class="btn btn-info btn-color-Create" data-bs-toggle="modal" data-bs-target="#editSelectedItemsHelpModal">
+        Need Help? Click here
+    </button>
+</div>
+<!-- Help Modal -->
+<div class="modal fade" id="editSelectedItemsHelpModal" tabindex="-1" aria-labelledby="editSelectedItemsHelpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editSelectedItemsHelpModalLabel">How to Edit Selected Items</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <i class="bi bi-filter-square-fill text-primary"></i> <strong>Filter/Search:</strong> Use the filter/search option to narrow down the list of items to edit.
+                    </div>
+                    <div class="list-group-item">
+                        <i class="bi bi-arrow-repeat text-success"></i> <strong>Save/Continue:</strong> Click the "Save/Continue" button to save the changes made to the selected items and move on to the next step of the event.
+                    </div>
+                    <div class="list-group-item">
+                        <i class="bi bi-arrow-left-square-fill text-danger"></i> <strong>Back to Overview:</strong> Click the "Back to Overview" button to return to the overview page of the event.
+                    </div>
+                    <div class="list-group-item">
+                        <i class="bi bi-check-circle text-success"></i> <strong>Select Items:</strong> Click the "Select" button to choose the items you want to add to the event.
+                    </div>
+                    <div class="list-group-item">
+                        <i class="bi bi-x-circle-fill text-danger"></i> <strong>Unselect Items:</strong> Click the "X" icon to remove the selected items from the event.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="width:100%;">
+  <form asp-action="EditSelectItems" method="get" class="tablect">
+    <input type="hidden" name="sortDirection" value="@ViewData["sortDirection"]" />
+    <input type="hidden" name="sortField" value="@ViewData["sortField"]" />
+
+    <div class="table-responsive">
+      <div class="table-wrapper">
+        <table class="table" style="text-align:left !important;">
+          <thead class="thead-light">
+            <tr>
+              <th></th>
+              <th style="padding-left:0;">
+                <input type="submit" name="actionButton" title="click here to sort by event" value="Item" class="btn btn-link" />
+              </th>
+@*              <th style="padding-left:0;">
+                <input type="submit" name="actionButton" value="Category" title="click here to sort by Category" class="btn btn-link" />
+              </th>*@
+              <th style="padding-left:0;">
+                <input type="submit" name="actionButton" value="UPC" title="click here to sort by UPC" class="btn btn-link" />
+
+              </th>
+                          <th style="padding-left:0;">
+                <input type="submit" name="actionButton" value="Locations" title="click here to sort by date" class="btn btn-link" />
+            </th>
+            <th style="padding-left:0;">
+                <input type="submit" name="actionButton" value="Quantity" title="click here to sort by date" class="btn btn-link" />
+            </th>
+              <th style="padding-left:0;">
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach (var item in Model)
+            {
+              <tr @if (item.isSlectedForEvent) { <text>class="selected-row"</text> }>
+                <td>
+                  @{
+                    if (item.ItemThumbNail?.Content != null)
+                    {
+                      string imageBase64 = Convert.ToBase64String(item.ItemThumbNail.Content);
+                      string imageSrc = string.Format("data:" + item.ItemThumbNail.MimeType + ";base64,{0}", imageBase64);
+                      <img src="@imageSrc" alt="Item Picture of @item.Name" title="Item Picture of @item.Name" class="img-fluid avatar" />
+                    }
+                    else
+                    {
+                      @:<div>
+                      <img src="~/images/image-not-found_tm.png" alt="Image not found" title="Image not found" class="img-fluid avatar" style="height:60px; width:60px;"/>
+                      @:</div>
+                    }
+                  }
+                </td>
+                <td>
+                  @Html.DisplayFor(modelItem => item.Name)
+                </td>
+@*                <td>
+                  @Html.DisplayFor(modelItem => item.Category.Name)
+                </td>*@
+                <td style="padding-left:0;">
+                  @Html.DisplayFor(modelItem => item.UPC)
+                </td>
+                 <td>
+                        @{
+                            if(item.Inventories.Count() == 0)
+                            {
+                                <p>None</p>
+                            }
+                            else
+                            {
+                                @foreach(var c in item.Inventories)
+                                {
+                                    @c.Quantity <br />
+                                }
+                            }
+
+                          }
+                    </td>
+                     <td>
+                        @{
+                            if(item.Inventories.Count() == 0)
+                            {
+                                <p>None</p>
+                            }
+                            else
+                            {
+                                @foreach(var c in item.Inventories)
+                                {
+                                    @c.Location.Name <br />
+                                }
+                            }
+
+                          }
+                    </td>
+                @if (item.isSlectedForEvent == false)
+                {
+                  <td>
+                    <a href="#" onclick="selectItem(event, @item.ID)" title="Click this to select the item">
+                      <i class="fas fa-check-circle"></i> Select
+                    </a>
+                  </td>
+                } 
+                else
+                {
+                  <td>
+                    <i class="fas fa-check-circle" style="color:green;"></i> Selected
+                  </td>           
+                }
+                  </tr>
+            }
+
+                    </tbody>
+                </table>
+            </div>
+            <partial name="_PagingNavBar" />
+        </div>
+        
+
+    </form>
+</div>
+<div class="selectedItems" style="float:right;">
+    <h2>Selected Items:</h2>
+@if (ViewBag.SelectedItems != null)
+    {
+        int selectedcount = 0;
+        <div class="table-container"> 
+            <table class="table table-hover">
+                <tbody>
+                
+                    @foreach (var item in ViewBag.SelectedItems)
+                    {
+                        @if (item.isSlectedForEvent)
+                        {
+
+                            int itemID = item.ID;
+                            selectedcount += 1;
+                            bool loggedin = false;
+                            foreach(var logged in ViewBag.LoggedInItems)
+                            {
+                                if(logged.ItemId == item.ID)
+                                {
+                                    loggedin = true;
+                                    
+                                }
+                            }
+
+                            selectedcount += 1;
+
+                            if (loggedin == true)
+                            {
+                                <span>The Items That Dont Have The X Icon Are Already Logged In And Cant Be Edited Further.</span>
+                                <tr>
+                                    <td>
+                                        @{
+                                            if (item.ItemThumbNail?.Content != null)
+                                            {
+                                                string imageBase64 = Convert.ToBase64String(item.ItemThumbNail.Content);
+                                                string imageSrc = string.Format("data:" + item.ItemThumbNail.MimeType + ";base64,{0}", imageBase64);
+                                                <img src="@imageSrc" alt="Item Picture of @item.Name" title="Item Picture of @item.Name" class="img-fluid avatar" />
+                                            }
+                                            else
+                                            {
+                                                @:<div>
+                                                <img src="~/images/image-not-found_tm.png" alt="Image not found" title="Image not found" class="img-fluid avatar" style="height:40px; width:40px;"/>
+                                                @:</div>
+                                            }
+                                        }
+                                    </td>
+                                    <td class="col-md-6">
+                                        @item.Name
+                                    </td>
+                                    <td class="col-md-6">
+                                        (#@item.UPC)
+                                    </td>
+                                    <td class="col-md-2">
+                                    </td>
+                                </tr>
+
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td>
+                                        @{
+                                            if (item.ItemThumbNail?.Content != null)
+                                            {
+                                                string imageBase64 = Convert.ToBase64String(item.ItemThumbNail.Content);
+                                                string imageSrc = string.Format("data:" + item.ItemThumbNail.MimeType + ";base64,{0}", imageBase64);
+                                                <img src="@imageSrc" alt="Item Picture of @item.Name" title="Item Picture of @item.Name" class="img-fluid avatar" />
+                                            }
+                                            else
+                                            {
+                                                @:<div>
+<img src="~/images/image-not-found_tm.png" alt="Image not found" title="Image not found" class="img-fluid avatar" style="height:40px; width:40px;"/>
+                                                @:</div>
+                                            }
+                                        }
+                                    </td>
+                                    <td class="col-md-6">
+                                        @item.Name
+                                    </td>
+                                    <td class="col-md-6">
+                                        (#@item.UPC)
+                                    </td>
+                                    <td class="col-md-2">
+                                        <!-- Button trigger modal -->
+                                        @*<img src="/images/close.png" alt="Cancel Icon" title="Unselect the item you chose" onclick="showPopup(@item.ID)" class="padding-for-actions" />*@
+
+                                        <img src="/images/close.png" alt="Cancel Icon" title="Unselect the item you chose" onclick="unselectItem(event, @item.ID)" class="padding-for-actions" />
+
+                                        <!-- Modal -->
+                                        <div class="modal fade" id="popup" tabindex="-1" role="dialog" aria-labelledby="popupLabel" aria-hidden="true">
+                                            <div class="modal-dialog" role="document">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="popupLabel">Confirmation</h5>
+                                                        <button type="button" class="close" onclick="$('#popup').modal('hide')" aria-label="Close">
+                                                            <span aria-hidden="true">&times;</span>
+                                                        </button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <h2>Are you sure you want to remove this item from this event?</h2>*The reserved quantity will be added back to the inventory.*
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" onclick="$('#popup').modal('hide')">Cancel</button>
+
+                                                        <button type="button" class="btn btn-danger" onclick="unselectItem(@item.ID)">Remove</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    }
+                
+                    @if(selectedcount == 0){<p>No records selected, Please select record</p> ; }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@section Scripts{
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+@*FOR THE SELECTING ITEM*@
+<script type="text/javascript">
+    function selectItem(event, itemId) {
+    event.preventDefault();
+    
+    console.log("Attempting to select item with ID " + itemId);
+
+    $.ajax({
+        type: "POST",
+        url: "/Events/EditSelectItems",
+        data: { ItemID: itemId },
+        success: function (response) {
+             // Reload the page to show the updated data
+        location.reload();
+
+        },
+        error: function (xhr, status, error) {
+            // Handle error response
+            // Reload the page to show the updated data
+            location.reload();
+        }
+    });
+
+}
+
+</script>
+@*FOR THE DESELCTING ITEM*@
+<script type="text/javascript">
+function unselectItem(event, itemId) {
+    event.preventDefault();
+
+    // Show a confirmation popup
+    if (confirm("Are you sure you want to unselect this item?")) {
+
+        console.log("Attempting to unselect item with ID " + itemId);
+
+        $.ajax({
+            type: "POST",
+            url: "/Events/EditRemoveSelectedItems",
+            data: { ItemID: itemId },
+            success: function (response) {
+                // Reload the page to show the updated data
+                location.reload();
+            },
+            error: function (xhr, status, error) {
+                // Handle error response
+                alert("Error selecting item: " + error);
+            }
+        });
+    }
+}
+
+
+</script>
+
+
+}
+
+
+

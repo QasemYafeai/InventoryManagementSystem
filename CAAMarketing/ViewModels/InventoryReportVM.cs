@@ -16,6 +16,7 @@ namespace CAAMarketing.ViewModels
         public long UPC { get; set; }
 
         [Display(Name = "Item Name")]
+        public int ItemID { get; set; }
         public string ItemName { get; set; }
 
         [Display(Name = "Cost")]
@@ -41,6 +42,12 @@ namespace CAAMarketing.ViewModels
 
         public ICollection<Inventory> Inventories { get; set; }
 
-        public ICollection<ItemLocation> ItemLocations { get; set; } = new HashSet<ItemLocation>();
+        public ICollection<ItemLocation> ItemLocations { get; set; }
+
+        //for checkbox on location inventory min levels
+        public bool FilterByBaseStockLevel { get; set; } = false;
+        public int BaseStockLevel { get; set; }
+        public int LowInventoryThreshold { get; set; } = 10;
+        public List<Location> Locations { get; set; }
     }
 }

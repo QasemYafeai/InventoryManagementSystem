@@ -4,10 +4,16 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - CAAMarketing</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/CAAMarketing.styles.css" asp-append-version="true" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="website icon" type="png" href="/images/Caamarketing192.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.3.1/jspdf.umd.min.js"></script>
+
+
     <script>
         function redirectToEdit(itemId) {
             window.location.href = "/OrderItems?ItemID=" + itemId;
@@ -27,7 +33,9 @@
             window.location.href = "/Inventories/RecoveringToastrNottifPopup/" + itemId2
         }
     </script>
-    
+
+    @*for autocomplete*@
+    @RenderSection("Styles", required: false)
 </head>
 <body>
   <header>
@@ -44,49 +52,72 @@
                 <ul class="navbar-nav flex-grow-1">
                     @if (User.Identity.IsAuthenticated)
                     {
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="inventoryMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Inventory Management
-                                </a>
-                                <ul class="dropdown-menu" aria-labelledby="inventoryMenu">
-                                    <li><a class="dropdown-item" asp-area="" asp-controller="Items" asp-action="Index">Inventory</a></li>
-                                    <li><a class="dropdown-item" asp-area="" asp-controller="InventoryTransfers" asp-action="Index">Transfers</a></li>
-                                    <li><a class="dropdown-item" asp-area="" asp-controller="Inventories" asp-action="InventoryReport"> Inventory Reports</a></li>
-                                    <li><a class="dropdown-item" asp-area="" asp-controller="Locations" asp-action="Index">Locations</a></li>
-                                </ul>
-                            </li>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" id="eventMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Event Management
-                                </a>
-                                <ul class="dropdown-menu" aria-labelledby="eventMenu">
-                                    <li><a class="dropdown-item" asp-area="" asp-controller="Events" asp-action="Index">Events</a></li> 
-                                    <li><a class="dropdown-item" asp-area="" asp-controller="EventLogs" asp-action="Index">Event Logs</a></li>
-                                    
-                                </ul>
-                            </li>
-                        
-                                if (User.IsInRole("Admin"))
-                                {
-                                <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle" href="#" id="adminMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        Administration
-                                    </a>
-                                    <ul class="dropdown-menu" aria-labelledby="adminMenu">
-                                        <li><a class="dropdown-item" asp-area="" asp-controller="MissingItemLogs" asp-action="Index">Item Discrepancy Logs</a></li>
-                                        <li><a class="dropdown-item" asp-area="" asp-controller="Archives" asp-action="Index">Archives</a></li>
-                                        
-                                        <li><a class="dropdown-item" asp-area="" asp-controller="UserRoles" asp-action="Index">User Roles</a></li>
-                                        <li><a class="dropdown-item" asp-area="" asp-controller="Employees" asp-action="Index">Maintain Employees</a></li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="inventoryMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Manage Inventory
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="inventoryMenu">
+                                <li><a class="dropdown-item" asp-area="" asp-controller="Items" asp-action="Index">Inventory</a></li>
+                                <li><a class="dropdown-item" asp-area="" asp-controller="InventoryTransfers" asp-action="Index">Transfers</a></li>
+                                @*<li><a class="dropdown-item" asp-area="" asp-controller="Inventories" asp-action="InventoryReport"> Inventory Reports</a></li>*@
+                                <li><a class="dropdown-item" asp-area="" asp-controller="Locations" asp-action="Index">Locations</a></li>
+                            </ul>
+                        </li>
 
-                                    </ul>
-                                </li>
-} 
-                }
-            </ul>
-            <partial name="_LoginPartial" />
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="inventoryMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Inventory Reports
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="inventoryMenu">
+                            <li><a asp-controller="Inventories" asp-action="InventoryReport" class="dropdown-item">Full Inventory</a></li>
+                            <li><a asp-controller="Inventories" asp-action="InventoryLevelsReport" class="dropdown-item">Inventory Levels</a></li>
+                            <li><a asp-controller="Inventories" asp-action="InventoryCostsReport" class="dropdown-item">Inventory Costs</a></li>
+                            <li> <a asp-controller="Inventories" asp-action="InventoryEventsReport" class="dropdown-item">Inventory Events</a></li>
+                            </ul>
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="eventMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Manage Events
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="eventMenu">
+                                <li><a class="dropdown-item" asp-area="" asp-controller="Events" asp-action="Index">Events</a></li> 
+                                <li><a class="dropdown-item" asp-area="" asp-controller="EventLogs" asp-action="Index">Event Logs</a></li>
+                                    
+                            </ul>
+                        </li>
+                        
+                        if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="adminMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Admin
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="adminMenu">
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Employees" asp-action="Index">Maintain Employees</a></li>
+                                        <li class="nav-item dropdown-submenu">
+                                            <a class="dropdown-item" href="#" style="color:black">Archives</a>
+                                            <ul class="dropdown-submenu dropdown-menu">
+                                                <li><a class="dropdown-item" asp-area="" asp-controller="Archives" asp-action="Index">Items</a></li>
+                                                <li><a class="dropdown-item" asp-area="" asp-controller="Archives" asp-action="TransferArchivesIndex">Transfers</a></li>
+                                            </ul>
+                                        </li>
+                                    <!-- Add new Logs item with submenu here -->
+                                    <li class="nav-item dropdown-submenu">
+                                        <a class="dropdown-item" href="#" style="color:black">Discrepancy Logs</a>
+                                        <ul class="dropdown-submenu dropdown-menu">
+                                            <li><a class="dropdown-item" asp-area="" asp-controller="MissingItemLogs" asp-action="Index" >Events</a></li>
+                                            <li><a class="dropdown-item" asp-area="" asp-controller="MissingTransitItems" asp-action="Index">Transfers</a></li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        } 
+                    }
+                </ul>
+                <partial name="_LoginPartial" />
+            </div>
         </div>
-    </div>
 </nav>
 </header>
 @{
@@ -133,25 +164,7 @@
 </body>
 </html>
 
-<style>
-    .navbar-nav .dropdown:hover .dropdown-menu {
-        display: block;
-        margin-top: 0;
-        border-top-left-radius: 0;
-        border-top-right-radius: 0;
-        transition: all 0.3s ease-out;
-    }
 
-    .dropdown-menu {
-        background-color: #f8f9fa;
-        border-radius: 5px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
 
-    .dropdown-item:hover {
-        background-color: #007bff;
-        color: #fff;
-    }
-</style>
 
                      

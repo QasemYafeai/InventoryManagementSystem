@@ -32,7 +32,6 @@ namespace CAAMarketing.Models
         [Required(ErrorMessage = "You Need A Supplier Address!")]
         public string Address { get; set; }
 
-       
-
+        public ICollection<Item> Items { get; set; } = new HashSet<Item>();
     }
 }

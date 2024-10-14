@@ -1,0 +1,96 @@
+﻿@model CAAMarketing.Models.InventoryTransfer
+@using System.Collections.Generic
+@using System.Linq
+@inject IHttpContextAccessor HttpContextAccessor
+@{
+    ViewData["Title"] = "Index";
+    //List<CAAMarketing.Models.Transfer> Transfers = ViewBag.Transfers;
+    List<CAAMarketing.Models.InventoryTransfer> invTransfers = ViewBag.InvTransfers;
+
+    //CAAMarketing.Models.Item item1 = (CAAMarketing.Models.Item)ViewBag.Item;
+}
+<div class="delete">
+    <h1>Transfer Record</h1>
+    <div>
+        <hr />
+    </div>
+    <table class="table table-striped table-hover">
+        <thead class="thead-light">
+            <tr>
+                <th>
+                    <button type="submit" name="actionButton" value="Item" class="btn btn-link" title="Sort by Items">Item</button>
+                </th>
+                <th>
+                    <button type="submit" name="actionButton" value="From" class="btn btn-link" title="Sort by From">From</button>
+                </th>
+                <th>
+                    <button type="submit" name="actionButton" value="To" class="btn btn-link" title="Sort by To">To</button>
+                </th>
+                <th>
+                    <button type="submit" name="actionButton" value="Qty" class="btn btn-link" title="Sort by Quantity">Qty</button>
+                </th>
+                 
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var trans in invTransfers)
+            {
+                if (trans.TransferId == Convert.ToInt32(HttpContextAccessor.HttpContext.Session.GetString("SelectedTransfer")) && trans.IsComfirmed == false)
+                {
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelItem => trans.Item.Name)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => trans.FromLocation.Name)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => trans.ToLocation.Name)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelItem => trans.Quantity)
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+        
+    </table>
+    <hr />
+    <form asp-action="ComfirmTransitModal" asp-controller="InventoryTransfers" method="post">
+
+        <div style="margin:45px">
+            
+            <input type="submit" title="Click here to confirm the transfer" value="Confirm All" class="btn-submit" />
+            <a href="/InventoryTransfers/ComfirmMultiple/@HttpContextAccessor.HttpContext.Session.GetString("SelectedTransfer")" class="btn-submit-con" title="Click here to Edit the transfer">Edit Quantities</a>
+
+            <div class="tooltip"> <a href='@ViewData["returnURL"]'> <img src="~/images/icons8-go-back-24.png" alt="Back Icon" /> <span class="tooltiptext">Back</span></a> </div>
+        </div>
+    </form>
+    
+</div>
+
+<style>
+    .btn-submit-con {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+    font-weight: bold;
+    padding: 8px 16px;
+    border-radius: 50px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease-in-out;
+}
+
+.btn-submit-con:hover{
+    color:white;
+    text-decoration:none;
+    background-color: #0069d9;
+        border-color: #0062cc;
+        cursor: pointer;
+}
+</style>
+

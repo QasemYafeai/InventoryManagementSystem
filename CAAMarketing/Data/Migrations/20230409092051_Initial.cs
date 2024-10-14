@@ -49,6 +49,20 @@ namespace CAAMarketing.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "InitialPasswords",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    UserId = table.Column<string>(type: "TEXT", nullable: true),
+                    Password = table.Column<string>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InitialPasswords", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AspNetRoleClaims",
                 columns: table => new
                 {
@@ -208,6 +222,9 @@ namespace CAAMarketing.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "InitialPasswords");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

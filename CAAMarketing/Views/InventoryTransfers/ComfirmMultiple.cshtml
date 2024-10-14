@@ -1,0 +1,377 @@
+﻿@model IEnumerable<CAAMarketing.Models.InventoryTransfer>
+
+@{
+
+    ViewData["Title"] = "Create";
+    //CAAMarketing.Models.Item SelectedItems = (CAAMarketing.Models.Item)ViewBag.SelectedItems
+}
+<partial name="_addMissingItemTransferModal" />
+
+@{
+    string EvName = "";
+    var TransferID = 0;
+}
+
+@foreach (var eventName in Model)
+{
+    EvName = eventName.Item.Name;
+    TransferID = eventName.TransferId;
+}
+<div class="deimage">
+    <h1><u><b>Confirm Transfers</b></u></h1><h2>Enter the Quantities Of Each Received Item. If Missing, Enter 0 In The Quantity:</h2>
+    @*<a href="@Url.Action("EditOverview", "InventoryTransfers", new { id = TransferID })" title="Click this to exit this Event Log Page" class="btn-exit">Exit</a>
+   *@ 
+   <a href="@Url.Action("Index", "InventoryTransfers")" title="Click this to exit this Event Log Page" class="btn-exit">Exit</a>
+   <hr />
+
+
+</div>
+@{
+    int totalItems = 0;
+    int itemsLoggedIn = 0;
+    int itemsNotLoggedIn = 0;
+
+    foreach (var itemRes in Model)
+    {
+        totalItems += 1;
+        if (itemRes.IsComfirmed)
+        {
+            itemsLoggedIn++;
+
+        }
+        else
+        {
+            itemsNotLoggedIn++;
+        }
+    }
+}
+
+
+
+
+<center>
+    @*<h3>All Items In This Event:</h3>*@
+    @{
+        if (itemsLoggedIn < totalItems)
+        {
+            <p><span class="text-danger"><b>@itemsLoggedIn out of @totalItems Items Confirmed</b></span></p>
+        }
+        else if (itemsLoggedIn >= totalItems)
+        {
+            <p><span class="text-success"><b>@itemsLoggedIn out of @totalItems Items Confirmed</b></span></p>
+        }
+    }
+
+    <hr />
+</center>
+
+
+
+<div class="selected-items">
+    <div class="row">
+        @foreach (var itemRes in Model)
+        {
+            <div class="col-md-4 col-lg-4" style="padding:15px">
+                <div class="row">
+                    <form asp-action="ComfirmMultiple" method="post">
+
+                        <input type="hidden" name="formId" value="@itemRes.Item.ID" />
+                        <fieldset class="item-fieldset" disabled="@itemRes.IsComfirmed" style="@(itemRes.IsComfirmed ? "background-color:#90EE90;" : "")">
+
+                            @{
+                                var Saved = "Confirmed";
+                                var Save = "Save";
+                                var logged = "";
+                                if (itemRes.IsComfirmed) { logged = "# Confirmed"; }
+                                else { logged = "# To Confirm"; }
+
+                            }
+                            <legend>Item #@itemRes.Item.ID: @itemRes.Item.Name</legend>
+
+                            <div class="row">
+                                <div class="col-md-2">
+                                    @{
+                                        if (itemRes.Item.ItemThumbNail?.Content != null)
+                                        {
+                                            string imageBase64 = Convert.ToBase64String(itemRes.Item.ItemThumbNail.Content);
+                                            string imageSrc = string.Format("data:" + itemRes.Item.ItemThumbNail.MimeType + ";base64,{0}", imageBase64);
+                                            <img src="@imageSrc" alt="Item Picture of @itemRes.Item.Name" title="Item Picture of @itemRes.Item.Name" class="img-fluid avatar" />
+                                        }
+                                        else
+                                        {
+                                            <div>
+                                                <img src="~/images/image-not-found_tm.png" alt="Image not found" title="Image not found" class="img-fluid avatar" />
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                                <div class="col-md-10">
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label>Location:</label>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <select class="form-control" name="@($"locations-{itemRes.Item.ID}")" id="@($"locations-{itemRes.Item.ID}")" disabled>
+
+                                                <option value="@itemRes.FromLocation.Id"
+                                                    disabled="@(itemRes.FromLocationId != itemRes.FromLocationId)"
+                                                    data-quantity="@itemRes.Quantity"
+                                                    selected="@(itemRes.FromLocationId == itemRes.FromLocationId)">@itemRes.FromLocation.Name</option>
+
+                                            </select>
+
+
+                                            <input type="hidden" name="@($"locations-{itemRes.Item.ID}")" value="@itemRes.FromLocationId" />
+
+                                            @*@itemRes.Location.Name*@
+
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label for="@($"loggedout-quantity-{itemRes.Item.ID}")"># Shipped Out:</label>
+                                            @*<input value="" id="quantity-" name="itemId1" />*@
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+
+                                                <input type="text" readonly class="form-control" value="" id="@($"loggedout-quantity-{itemRes.Item.ID}")">
+
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label for="@($"location-quantity-{itemRes.Item.ID}")">@logged</label>
+                                        </div>
+                                        <input type="text" hidden="hidden" class="form-control" value="" id="@($"locationId-{itemRes.Item.ID}")" name="@($"locationId{itemRes.Item.ID}")" />
+                                        @if (itemRes.IsComfirmed)
+                                        {
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <input type="text" class="form-control" value="@itemRes.ComfirmedQuantity">
+
+                                                </div>
+                                            </div>
+
+                                        }
+                                        else
+                                        {
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <input type="text" class="form-control" value="" id="@($"location-quantity-{itemRes.Item.ID}")" name="@($"itemId{itemRes.Item.ID}")">
+
+                                                </div>
+                                            </div>
+                                        }
+
+                                    </div>
+
+
+
+                                </div>
+                            </div>
+                            <br />
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <button style="margin:auto" class="btn btn-save float-end" title="click this to tlog back in the item" type="submit" id="submit-@itemRes.Item.ID">
+                                        <span style="display: inline-block; pointer-events: none;">
+                                            @if (itemRes.IsComfirmed)
+                                            {
+                                                @Saved
+                                                ;
+                                            }
+                                            else
+                                            {
+                                                @Save
+                                                ;
+                                            }
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+
+                    </form>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<button hidden="hidden" id="addMissingItemTransfer" title="Add Supplier" data-bs-toggle="modal" data-bs-target="#addMissingItemTransferModal" type="button">Add</button>
+
+
+
+
+
+
+@section Scripts{
+
+    <script type="text/javascript">
+
+        //$(document).ready(function () {
+        //    $('select[name^="locations-"]').change(function () {
+        //        var selectedLocationId = $(this).val();
+        //        var selectedLocationQuantity = $(this).find('option:selected').data('quantity');
+        //        var totalStockInput = $('#location-quantity-' + $(this).attr('id').split('-')[1]);
+        //        totalStockInput.val(selectedLocationQuantity);
+
+
+        //    });
+        //});
+
+
+        $(document).ready(function () {
+            $('select[name^="locations-"]').each(function () {
+                var selectedLocationId = $(this).val();
+                var selectedLocationQuantity = $(this).find('option:selected').data('quantity');
+                var itemID = $(this).attr('id').split('-')[1];
+                var locationIdInput = $('#locationId-' + itemID);
+                var totalStockInput = $('#location-quantity-' + itemID);
+                var loggedOutInput = $('#loggedout-quantity-' + itemID);
+
+                console.log(selectedLocationId);
+                locationIdInput.val(selectedLocationId);
+                totalStockInput.val(selectedLocationQuantity);
+                loggedOutInput.val(selectedLocationQuantity);
+            });
+        });
+
+    </script>
+
+    <script type="text/javascript">
+        var message = '@TempData["InitateMissingItemLog"]';
+        if (message) {
+            console.log(message);
+            $('#addMissingItemTransfer').trigger('click');
+        }
+    </script>
+
+    <script src="~/js/refreshDDL.js"></script>
+
+    <script type="text/javascript">
+        $('#submitMissingItemLogCreate1').click(function (event) {
+            event.preventDefault();
+            var form = $('#createMissingItemTransferForm');
+            if (form.valid()) {
+                $.ajax({
+                    type: "POST",
+                    url: form.attr('action'),
+                    data: form.serialize(),
+                    success: function () {
+                        $('#addMissingItemTransferModal').modal('hide');
+                        window.location.reload();
+                    },
+                    error: function () {
+                        alert("Create Failed.  There was a problem adding the record.");
+                    }
+                });
+            }
+            return false;
+        });
+        $('#addMissingItemTransferModal').on('hide.bs.modal', function () {
+            $('#createMissingItemTransferForm').find("input[type=text], textarea, select").val("");//to clear the data in the popup
+        });
+    </script>
+
+}
+
+
+<style>
+    .red-text {
+        color: red;
+    }
+</style>
+
+
+
+<style>
+
+    .selected-items {
+        flex-wrap: wrap;
+    }
+
+    .item-fieldset {
+        margin-bottom: 30px;
+        padding: 30px 20px;
+        border-radius: 10px;
+        border: 2px solid #ccc;
+        box-sizing: border-box;
+        background-color: #f9f9f9;
+        transition: all 1s ease;
+    }
+
+        .item-fieldset:hover {
+            background-color: #e9e9e9;
+            border: 4px solid #ccc;
+            cursor: pointer;
+        }
+
+        .item-fieldset legend {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .item-fieldset label {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .item-fieldset input[type="text"] {
+            font-size: 14px;
+            padding: 10px;
+        }
+
+        .item-fieldset .form-check {
+            margin-top: 10px;
+        }
+
+        .item-fieldset .form-check-input {
+            margin-right: 10px;
+        }
+
+
+    .btn-exit {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        color: white;
+        font-weight: bold;
+        padding: 10px 20px;
+        border-radius: 50px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease-in-out;
+    }
+
+        .btn-exit:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+            cursor: pointer;
+        }
+
+    .btn-save {
+        background-color: #28a745;
+        border-color: #28a745;
+        color: white;
+        font-weight: bold;
+        padding: 10px 20px;
+        border-radius: 50px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease-in-out;
+    }
+
+        .btn-save:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+            cursor: pointer;
+        }
+
+</style>

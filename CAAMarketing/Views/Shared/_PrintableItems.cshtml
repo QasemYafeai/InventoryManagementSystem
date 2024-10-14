@@ -1,0 +1,162 @@
+﻿@using iTextSharp.text
+@using iTextSharp.text.pdf
+@model List<CAAMarketing.ViewModels.PrintableViewModel>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th><input type="checkbox" id="select-all-checkbox" /></th>
+            <th>Name</th>
+            <th>UPC</th>
+            <th>Quantity</th>
+            <th>Barcode</th>
+            <th>Print</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td><input type="checkbox" class="item-checkbox" data-upc="@item.UPC" /></td>
+                <td>@item.Name</td>
+                <td>@item.UPC</td>
+                <td>@item.Quantity</td>
+                <td>
+                    <div class="barcode-svg">
+                        @Html.Raw(item.BarcodeSvg)
+                    </div>
+                </td>
+                <td><button class="print-btn" data-upc="@item.UPC">Print</button></td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        // Select all checkboxes
+        $("#select-all-checkbox").change(function () {
+            $(".item-checkbox").prop("checked", $(this).prop("checked"));
+        });
+        // Print selected items
+        $("#print-selected-btn").click(function () {
+            var selectedUPCs = [];
+            $(".item-checkbox:checked").each(function () {
+                selectedUPCs.push($(this).data("upc"));
+            });
+            printItems(selectedUPCs);
+        });
+
+        // Print single item
+        $(".print-btn").click(function () {
+            var upc = $(this).data("upc");
+            printItems([upc]);
+        });
+
+        // Print items by UPC
+        function printItems(upcs) {
+            var htmlContent = "";
+            upcs.forEach(function (upc) {
+                var printableItem = $(".printable-item[data-upc='" + upc + "']");
+                var barcodeSvg = printableItem.find(".barcode-svg").html();
+                htmlContent += "<div class='barcode-container'>" + barcodeSvg + "</div>";
+            });
+            printBarcode(htmlContent);
+        }
+
+        // Print barcode function
+        function printBarcode(htmlContent) {
+            var printWindow = window.open('', '_blank');
+            printWindow.document.write('<html><head><title>Print Barcode</title>');
+            printWindow.document.write('<style>.barcode-container{margin: 0 auto;width: 350px;margin-bottom: 20px;}</style>');
+            printWindow.document.write('</head><body>');
+            printWindow.document.write(htmlContent);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            // Add a delay before calling the print() method
+            setTimeout(function () {
+                printWindow.print();
+            }, 400);
+        }
+        function startScanner() {
+            initializeQuagga();
+            $(".quagga-scanner-container").show();
+        }
+
+        function stopScanner() {
+            Quagga.stop();
+            $(".quagga-scanner-container").hide();
+        }
+
+        function initializeQuagga() {
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: document.querySelector('.quagga-scanner-container .viewport'),
+                    constraints: {
+                        facingMode: "environment"
+                    }
+                },
+                decoder: {
+                    readers: ["ean_reader"]
+                }
+            }, function (error) {
+                if (error) {
+                    console.log(error);
+                    return;
+                }
+                Quagga.start();
+            });
+
+            Quagga.onDetected(function (result) {
+                var upcCode = result.codeResult.code;
+                var scannedUpcCodes = JSON.parse($("#scanned-upc-codes").val() || "[]");
+                scannedUpcCodes.push(upcCode);
+                $("#scanned-upc-codes").val(JSON.stringify(scannedUpcCodes));
+                Quagga.stop();
+                $(".quagga-scanner-container").hide();
+                filterItemsByUpc(scannedUpcCodes);
+            });
+        }
+
+        $("#scan-barcode-btn").click(function () {
+            startScanner();
+        });
+
+        $("#close-scanner-btn").click(function () {
+            stopScanner();
+        });
+
+        $("#clear-filter-btn").click(function () {
+            location.reload();
+        });
+
+        function filterItemsByUpc(upcCodes) {
+            $.ajax({
+                url: '@Url.Action("GetPrintableItems", "Items")?upcCodes=' + upcCodes.join(','),
+                success: function (response) {
+                    // Replace the table content with the filtered items
+                    $("table.table").replaceWith(response);
+                },
+                error: function (xhr, status, error) {
+                    console.log("Error: " + error);
+                }
+            });
+        }
+
+
+        // Scan barcode button click event
+        $("#scan-barcode-btn").click(function () {
+            $("#scanner-container").show();
+            initQuagga();
+        });
+
+        $("#clear-filter-btn").click(function () {
+            location.reload();
+        });
+    });
+</script>

@@ -399,7 +399,7 @@ namespace CAAMarketing.Controllers
                             }
                         }
 
-                        await _context.SaveChangesAsync();
+                        await _context.SaveChangesAudit();
 
                         // Update the event log
                         if (originalEventLog != null)
@@ -409,8 +409,8 @@ namespace CAAMarketing.Controllers
                             originalEventLog.Quantity = itemReservationToUpdate.Quantity;
                             originalEventLog.LogDate = DateTime.Now;
 
-                            _context.Update(originalEventLog);
-                            await _context.SaveChangesAsync();
+                            //_context.Update(originalEventLog);
+                            await _context.SaveChangesAudit();
                         }
 
                         return RedirectToAction(nameof(Index));
@@ -484,7 +484,7 @@ namespace CAAMarketing.Controllers
                 inventory.Quantity += itemReservation.Quantity;
             }
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAudit();
 
             // Check if the total quantity of the item in all reservations
             // is greater than the available quantity in the inventory

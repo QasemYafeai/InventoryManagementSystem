@@ -1,0 +1,331 @@
+﻿.container {
+    width: 100%;
+}
+
+.progressbar {
+    counter-reset: step;
+}
+
+    .progressbar li {
+        list-style: none;
+        display: inline-block;
+        width: 30.33%;
+        position: relative;
+        text-align: center;
+    }
+
+        .progressbar li:before {
+            content: counter(step);
+            counter-increment: step;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            border: 1px solid #ddd;
+            border-radius: 100%;
+            display: block;
+            text-align: center;
+            margin: 0 auto 10px auto;
+            background-color: #fff;
+        }
+
+        .progressbar li:after {
+            content: "";
+            position: absolute;
+            width: 100%;
+            height: 1px;
+            background-color: #ddd;
+            top: 15px;
+            left: -50%;
+            z-index: -1;
+        }
+
+        .progressbar li:first-child:after {
+            content: none;
+        }
+
+        .progressbar li.active {
+            color: green;
+        }
+
+            .progressbar li.active:before {
+                border-color: green;
+            }
+
+            .progressbar li.active + li:after {
+                background-color: green;
+            }
+
+.select2 {
+    border-color: red !important;
+}
+
+
+
+#disabled-link {
+    color: gray;
+    cursor: not-allowed;
+    text-decoration: none;
+}
+
+.selectedItems {
+    position: inherit;
+    /* top: 150px; */
+    /*right: -50%;*/
+    margin-top: 30px;
+    width: 450px;
+    padding: 10px;
+    background-color: #f1f1f1;
+    border: 1px solid #ccc;
+}
+
+
+    .selectedItems h2 {
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+
+
+    .selectedItems table {
+        margin-top: 20px;
+    }
+
+    .selectedItems img {
+        max-width: 60px;
+        max-height: 60px;
+        margin-right: 10px;
+    }
+
+    .selectedItems td {
+        vertical-align: middle;
+    }
+
+    .selectedItems a {
+        color: #007bff;
+        text-decoration: none;
+    }
+
+        .selectedItems a:hover {
+            text-decoration: underline;
+        }
+
+    .selectedItems input[type="submit"] {
+        font-size: 16px;
+        font-weight: normal;
+        padding: 0;
+        margin: 0;
+        border: none;
+        background-color: transparent;
+        color: #007bff;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+        .selectedItems input[type="submit"]:hover {
+            text-decoration: underline;
+        }
+
+
+.selected-row {
+    background-color: rgba(0, 255, 0, 0.2);
+    transition: background-color 0.3s ease-in-out;
+}
+
+
+
+.table {
+    font-size: 16px;
+    font-family: Arial, sans-serif;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+    .table th {
+        background-color: #f2f2f2;
+        color: #333;
+        text-align: left;
+        padding: 12px;
+    }
+
+    .table td {
+        border-bottom: 1px solid #ddd;
+        padding: 8px;
+    }
+
+    /*    .table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }*/
+
+    .table tr:not(.selected-row):hover {
+        background-color: #E8E8E8;
+    }
+
+    .table tr.selected-row:hover {
+        background-color: #50C878;
+    }
+
+
+.padding-for-actions {
+    padding: 5px;
+}
+
+.disabled-link {
+    color: #aaa;
+}
+
+/* Style for the table header */
+thead th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+/* Style for the table rows */
+tbody tr {
+    background-color: #f9f9f9;
+}
+
+
+
+/* Style for the table cells */
+td {
+    border: none;
+    vertical-align: middle;
+    padding: 10px;
+}
+
+    /* Style for the table cell containing the item thumbnail */
+    td:first-child {
+        width: 80px;
+    }
+
+    /* Style for the table cell containing the item name */
+    td:nth-child(2) {
+        font-weight: bold;
+    }
+
+    /* Style for the table cell containing the "Select" link */
+    td:last-child {
+        text-align: center;
+    }
+
+/* Style for the "Select" link */
+.padding-for-actions {
+    cursor: pointer;
+    width: 40px;
+    height: 30px;
+    padding: 5px 10px;
+    border-radius: 5px;
+    /*background-color: #007bff;*/
+    color: #fff;
+    text-decoration: none;
+}
+
+/* Style for the "Select" link */
+.padding-for-actions-check {
+    width: 40px;
+    height: 30px;
+    padding: 5px 10px;
+    border-radius: 5px;
+    /*background-color: #007bff;*/
+    color: #fff;
+    text-decoration: none;
+}
+
+.padding-for-actions:hover {
+    background-color: #0069d9;
+    color: #fff;
+}
+
+
+
+.tablect {
+    width: 800px;
+    float: left;
+}
+
+@media (max-width: 1024px) {
+    .progressbar {
+        font-size: 12px;
+    }
+
+    .table {
+        font-size: 12px;
+    }
+
+    .thead-light input {
+        font-size: 12px;
+    }
+
+    .tablect {
+        width: 468px;
+    }
+
+    .selectedItems {
+        font-size: 12px;
+        width: 420px;
+    }
+}
+
+@media (max-width: 768px) {
+    .progressbar {
+        font-size: 12px;
+    }
+
+    .table {
+        font-size: 10px;
+    }
+
+    .thead-light input {
+        font-size: 10px;
+    }
+
+    .tablect {
+        width: 400px;
+    }
+
+    .selectedItems {
+        width: 250px;
+    }
+
+        .selectedItems .table {
+            font-size: 8px;
+        }
+
+        .selectedItems table.table td {
+            padding-left: 0;
+        }
+}
+
+@media (max-width: 425px) {
+    .table {
+        font-size: 8px;
+    }
+
+    .tablect {
+        width: 100%;
+    }
+
+    .thead-light input {
+        font-size: 8px;
+    }
+
+    .progressbar {
+        font-size: 6px;
+    }
+
+    h1 {
+        font-size: 18px
+    }
+
+    h2 {
+        font-size: 14px
+    }
+
+    h5 {
+        font-size: 12px;
+    }
+
+    .selectedItems {
+        width: 100%;
+        margin-bottom: 150px
+    }
+}

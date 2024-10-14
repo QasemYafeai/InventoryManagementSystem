@@ -14,17 +14,18 @@ namespace CAAMarketing.Models
         [Required(ErrorMessage = "You Need An Order Quantity!")]
         public int Quantity { get; set; }
 
-        [Required(ErrorMessage = "You Need A Order Date!")]
+        [Display(Name = "Date Made")]
         [DataType(DataType.Date)]
         [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
         public DateTime? DateMade { get; set; } = DateTime.Today;
 
+        [Display(Name = "Delivery Date")]
         [Required(ErrorMessage = "You Need A Order Delivery Date!")]
         [DataType(DataType.Date)]
         [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
         public DateTime? DeliveryDate { get; set; }
 
-        [Display(Name = "Cost")]
+        [Display(Name = "Cost Per Item")]
         [Required(ErrorMessage = "You must enter a cost.")]
         [DataType(DataType.Currency)]
         public decimal Cost { get; set; }
@@ -42,6 +43,7 @@ namespace CAAMarketing.Models
         [Display(Name = "Location")]
         public int LocationID { get; set; }
         public Location Location { get; set; }
+
         public int Progress
         {
             get
@@ -68,9 +70,9 @@ namespace CAAMarketing.Models
                 yield return new ValidationResult("Date Made cannot be in the Future or 15 years in the past.", new[] { "DateMade" });
             }
 
-            if (DeliveryDate.GetValueOrDefault() < DateTime.Today.AddYears(-5))
+            if (DeliveryDate.GetValueOrDefault() < DateTime.Today)
             {
-                yield return new ValidationResult("Delivery Date cannot be more than 5 years in the past.", new[] { "DeliveryDate" });
+                yield return new ValidationResult("Delivery Date cannot be in the past.", new[] { "DeliveryDate" });
             }
         }
     }

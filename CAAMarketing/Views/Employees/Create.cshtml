@@ -6,68 +6,89 @@
 <form asp-action="Create">
     <div class="cont">
     <div class="deimage">
-<h1>Create Employee </h1><small style="color: red">*Red fields are required</small>
+<h1>Create Employee </h1><small style="color: red">* required fields</small>
         <hr />
             <div class="deimage2">
                 <div class="col-md-12">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Active" />
             <div class="form-group">
-                <label asp-for="FirstName" class="control-label"></label>
-                <input asp-for="FirstName" class="form-control" autofocus required style="border-color: red"/>
+                <label asp-for="FirstName" class="control-label required-label"></label>
+                <input asp-for="FirstName" class="form-control" autofocus required/>
                 <span asp-validation-for="FirstName" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="LastName" class="control-label"></label>
-                <input asp-for="LastName" class="form-control" required style="border-color: red"/>
+                <label asp-for="LastName" class="control-label required-label"></label>
+                <input asp-for="LastName" class="form-control" required/>
                 <span asp-validation-for="LastName" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="Phone" class="control-label"></label>
-                <input asp-for="Phone" class="form-control" required style="border-color: red"/>
+                <label asp-for="Phone" class="control-label required-label" ></label>
+                <input asp-for="Phone" class="form-control" required/>
                 <span asp-validation-for="Phone" class="text-danger"></span>
             </div>
         </div>
         <div class="col-md-12">
             <div class="form-group">
-                <label asp-for="Email" class="control-label"></label>
-                <input asp-for="Email" class="form-control" required style="border-color: red"/>
+                <label asp-for="Email" class="control-label required-label"></label>
+                <input asp-for="Email" class="form-control" required/>
                 <span asp-validation-for="Email" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="UserRoles" class="control-label"></label>
-                <table style="margin-left:auto; margin-right:auto">
-                    <tr>
-                        @{
-                            int cnt = 0;
-                            List<CAAMarketing.ViewModels.RoleVM> roles = ViewBag.Roles;
-                            foreach (var role in roles)
-                            {
-                                if (cnt++ % 3 == 0)
-                                {
-                                    @:</tr><tr>
-                                }
-                                    @:<td>
-                                        <input type="checkbox"
-                                               name="selectedRoles"
-                                               value="@role.RoleName"
-                                               @(Html.Raw(role.Assigned ? "checked=\"checked\"" : "")) />
-                                        @role.RoleName @:&nbsp;&nbsp;
-                                    @:</td>
-                            }
-                            @:</tr>
-                        }
-                    </table>
-            <div style="margin:25px">
-<a class="btn btn-primary" id="create-order-btn">Create</a>
 
-            <div class="tooltip"> <a href="~/Employees" > <img src="~/images/icons8-go-back-24.png" alt="Back Icon"/> <span class="tooltiptext">Back</span></a> </div>
-                </div>
+            <div class="form-group">
+    <label asp-for="UserRoles" class="control-label"></label>
+    <table style="margin-left:auto; margin-right:auto">
+        <tr>
+            @{
+                int cnt = 0;
+                List<CAAMarketing.ViewModels.RoleVM> roles = ViewBag.Roles;
+                foreach (var role in roles)
+                {
+                    if (cnt++ % 3 == 0)
+                    {
+                        @:</tr><tr>
+                    }
+                    @:<td>
+                        <input type="checkbox"
+                               id="@role.RoleName"
+                               name="selectedRoles"
+                               value="@role.RoleName"
+                               @(Html.Raw(role.Assigned ? "checked=\"checked\"" : "")) />
+                        @role.RoleName @:&nbsp;&nbsp;
+                    @:</td>
+                }
+                @:</tr>
+            }
+        </table>
+</div>
+<div class="form-group">
+    <label asp-for="Password" class="control-label"></label>
+    <input asp-for="Password" class="form-control" readonly id="passwordField" />
+    <span asp-validation-for="Password" class="text-danger"></span>
+</div>
+
+
+
             </div>
-            </div>
+
         </div>
-        </div>
+        <div style="margin:25px">
+    <button type="button" class="btn-submit" id="create-order-btn">
+        Create
+        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+    </button>
+
+    <div class="tooltip">
+        <a href="~/Employees">
+            <img src="~/images/icons8-go-back-24.png" alt="Back Icon" />
+            <span class="tooltiptext">Back</span>
+        </a>
     </div>
+</div>
+        </div>
+
+    </div>
+
  </form>
 
    
@@ -78,18 +99,26 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 
-    <script>
+   <script>
         $(function () {
             // Show the modal dialog when the "Create" button is clicked
             $('#create-order-btn').click(function () {
+                // Show the spinner and disable the button
+                $(this).find('.spinner-border').removeClass('d-none');
+                $(this).prop('disabled', true);
+
                 // Change the modal message
-                $('#create-order-modal .modal-body').text('Are you sure you want to Create this record?');
+                $('#create-order-modal .modal-body').text('Are you sure you want to Create this Employee?');
                 $('#create-order-modal').modal('show');
             });
 
             // Hide the modal when the "Cancel" button is clicked
             $('#create-order-modal').on('click', '.btn-secondary', function () {
                 $('#create-order-modal').modal('hide');
+
+                // Hide the spinner and enable the button
+                $('#create-order-btn').find('.spinner-border').addClass('d-none');
+                $('#create-order-btn').prop('disabled', false);
             });
 
             // Submit the form when the "Yes" button is clicked
@@ -99,6 +128,32 @@
             });
         });
     </script>
+
+    <script>
+    $(document).ready(function () {
+        // Function to uncheck other checkboxes
+        function uncheckOtherCheckboxes(checkedCheckbox) {
+            $("input[type='checkbox']").not(checkedCheckbox).prop('checked', false);
+        }
+
+        // Event handler for checkboxes
+        $("input[type='checkbox']").change(function () {
+            uncheckOtherCheckboxes(this);
+
+            var password = "";
+            if ($("#Admin").is(":checked")) {
+                password = "Admin@123";
+            } else if ($("#Supervisor").is(":checked")) {
+                password = "Super@123";
+            } else if ($("#Employee").is(":checked")) {
+                password = "Emp@123";
+            }
+            $("#passwordField").val(password);
+        });
+    });
+</script>
+
+
 }
 
 
@@ -106,13 +161,13 @@
     <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="create-order-modal-title">Confirm Order Creation</h5>
+                <h5 class="modal-title" id="create-order-modal-title">Confirm Employee Creation</h5>
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to create this order?</p>
+                <p>Are you sure you want to create this Record?</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
@@ -121,3 +176,14 @@
         </div>
     </div>
 </div>
+
+
+<style>
+    .deimage2 {
+        text-align:left;
+}​
+    .deimage2 label {
+
+}
+
+</style>

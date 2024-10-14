@@ -4,9 +4,10 @@
 @{
 
     ViewData["Title"] = "Create";
+    var generatedUpc = ViewData["GeneratedUPC"];
 }
 
-
+<link rel="stylesheet" href="/css/ItemCreate.css" asp-append-version="true" />
 
 <div class="container">
     <ul class="progressbar">
@@ -17,7 +18,7 @@
             <p>Receive Inventory</p>
         </li>
         <li>
-            <p>OverView</p>
+            <p>Overview</p>
         </li>
     </ul>
 </div>
@@ -28,60 +29,60 @@
 <div class="cont">
     <div class="edtext">
         <center><h3>Step 1: </h3></center>
-        <h1>Create Item</h1><small style="color: red">*Red fields are required</small>
+        <h1>Create Item</h1><small style="color: red">* required fields</small>
         <hr />
-        <div class="row">
+        <div class="row" style="text-align:left;">
             <div class="col-md-12">
                 <partial name="_addSupplierModal" />
                 <partial name="_addCategoryModal" />
                 <form asp-action="Create" method="post" enctype="multipart/form-data">
                     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                     <div class="form-group">
-                        <label asp-for="Name" class="control-label"></label>
-                        <input asp-for="Name" class="form-control" required style="border-color: red" />
+                        <label asp-for="Name" class="control-label required-label">Name</label>
+                        <input asp-for="Name" placeholder="ex. Pins" class="form-control" required />
                         <span asp-validation-for="Name" class="text-danger"></span>
                     </div>
                     <div class="form-group">
                         <label asp-for="Description" class="control-label"></label>
-                        <textarea asp-for="Description" class="form-control"></textarea>
+                        <textarea asp-for="Description" placeholder="ex.with CAA Logo" class="form-control"></textarea>
                         <span asp-validation-for="Description" class="text-danger"></span>
                     </div>
                     <div class="form-group">
                         <label asp-for="Notes" class="control-label"></label>
-                        <textarea asp-for="Notes" class="form-control"></textarea>
+                        <textarea asp-for="Notes" placeholder="ex.Perfect condition" class="form-control"></textarea>
                         <span asp-validation-for="Notes" class="text-danger"></span>
                     </div>
                     <div class="form-group">
                         <label asp-for="UPC" class="control-label"></label>
-                        <input asp-for="UPC" class="form-control" required style="border-color: red" />
+                        <input asp-for="UPC" class="form-control" placeholder="00123456789012" value="@generatedUpc" />
                         <span asp-validation-for="UPC" class="text-danger"></span>
                     </div>
-<div class="form-group">
-    <label class="control-label">Choose Supplier</label>
-    <div class="input-group">
-                            <select asp-for="SupplierID" class="form-control select2" asp-items="ViewBag.SupplierID" required style="border-color: red">
-            <option value="">None</option>
-        </select>
-        <button class="btn btn-plus" id="nowAddSupplier" title="Add Supplier" data-bs-toggle="modal" data-bs-target="#addSupplierModal" type="button"></button>
-    </div>
-</div>
+                    <div class="form-group">
+                        <label class="control-label required-label">Choose Supplier</label>
+                        <div class="input-group">
+                            <select asp-for="SupplierID" class="form-control select2" asp-items="ViewBag.SupplierID" required>
+                                <option value="">None</option>
+                            </select>
+                            <button class="btn btn-plus" id="nowAddSupplier" title="Add Supplier" data-bs-toggle="modal" data-bs-target="#addSupplierModal" type="button"></button>
+                        </div>
+                    </div>
 
-<div class="form-group">
-    <label class="control-label">Choose Category</label>
-    <div class="input-group">
-                            <select asp-for="CategoryID" class="form-control select2" asp-items="ViewBag.CategoryID" required style="border-color: red">
-            <option value="">None</option>
-        </select>
-        <button class="btn btn-plus" id="nowAddCategory" title="Add Category" data-bs-toggle="modal" data-bs-target="#addCategoryModal" type="button"></button>
-    </div>
-</div>
+                    <div class="form-group">
+                        <label class="control-label required-label">Choose Category</label>
+                        <div class="input-group">
+                            <select asp-for="CategoryID" class="form-control select2 " asp-items="ViewBag.CategoryID"  required>
+                                <option value="">None</option>
+                            </select>
+                            <button class="btn btn-plus" id="nowAddCategory" title="Add Category" data-bs-toggle="modal" data-bs-target="#addCategoryModal" type="button"></button>
+                        </div>
+                    </div>
                     <div class="form-group">
                         <label class="control-label custom-file-label">Picture File:</label>
                         <div class="input-group mb-3">
                             <input type="file" class="form-control" name="thePicture" id="thePicture">
                         </div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" style="text-align:center !important;">
                         <input type="submit" value="Create" class="btn-submit" />
                         <div class="tooltip"> <a asp-controller="Items" asp-action="Index"> <img src="~/images/icons8-go-back-24.png" alt="Exit Icon" /> <span class="tooltiptext">Exit</span></a> </div>
                     </div>
@@ -108,8 +109,13 @@
                     type: "POST",
                     url: form.attr('action'),
                     data: form.serialize(),
-                    success: function () {
+                    success: function (data) {
                         $('#addCategoryModal').modal('hide');
+                        // Add the new category to the dropdown list and set it as the selected item
+                        var categoryID = data.categoryID;
+                        var categoryName = data.categoryName;
+                        var newOption = new Option(categoryName, categoryID, true, true);
+                        $('select[name="CategoryID"]').append(newOption).trigger('change');
                     },
                     error: function () {
                         alert("Create Failed.  There was a problem adding the record.");
@@ -118,10 +124,8 @@
             }
             return false;
         });
-        $('#addCategoryModal').on('hide.bs.modal', function () {
-            $('#createCategoryForm').find("input[type=text], textarea, select").val("");//to clear the data in the popup
-            refreshDDL('CategoryID', '/Items/GetCategories', false, null, true, 'None', true);
-        });
+
+
     </script>
 
     <script type="text/javascript">
@@ -133,8 +137,13 @@
                     type: "POST",
                     url: form.attr('action'),
                     data: form.serialize(),
-                    success: function () {
+                    success: function (data) {
                         $('#addSupplierModal').modal('hide');
+                        // Add the new supplier to the dropdown list and set it as the selected item
+                        var supplierID = data.supplierID;
+                        var supplierName = data.supplierName;
+                        var newOption = new Option(supplierName, supplierID, true, true);
+                        $('select[name="SupplierID"]').append(newOption).trigger('change');
                     },
                     error: function () {
                         alert("Create Failed.  There was a problem adding the record.");
@@ -142,10 +151,6 @@
                 });
             }
             return false;
-        });
-        $('#addSupplierModal').on('hide.bs.modal', function () {
-            $('#createSupplierForm').find("input[type=text], textarea, select").val("");//to clear the data in the popup
-            refreshDDL('SupplierID', '/Items/GetSuppliers', false, null, true, 'None', true);
         });
     </script>
 
@@ -158,67 +163,3 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 }
-
-<style>
-    .container {
-        width: 100%;
-    }
-
-    .progressbar {
-        counter-reset: step;
-    }
-
-        .progressbar li {
-            list-style: none;
-            display: inline-block;
-            width: 30.33%;
-            position: relative;
-            text-align: center;
-            cursor: pointer;
-        }
-
-            .progressbar li:before {
-                content: counter(step);
-                counter-increment: step;
-                width: 30px;
-                height: 30px;
-                line-height: 30px;
-                border: 1px solid #ddd;
-                border-radius: 100%;
-                display: block;
-                text-align: center;
-                margin: 0 auto 10px auto;
-                background-color: #fff;
-            }
-
-            .progressbar li:after {
-                content: "";
-                position: absolute;
-                width: 100%;
-                height: 1px;
-                background-color: #ddd;
-                top: 15px;
-                left: -50%;
-                z-index: -1;
-            }
-
-            .progressbar li:first-child:after {
-                content: none;
-            }
-
-            .progressbar li.active {
-                color: green;
-            }
-
-                .progressbar li.active:before {
-                    border-color: green;
-                }
-
-                .progressbar li.active + li:after {
-                    background-color: green;
-                }
-
-    .select2 {
-        border-color: red !important;
-    }
-</style>

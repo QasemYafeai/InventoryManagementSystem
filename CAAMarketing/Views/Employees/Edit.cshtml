@@ -16,19 +16,19 @@
         <div class="col-md-6">
             <input type="hidden" asp-for="ID" />
             <div class="form-group">
-                <label asp-for="FirstName" class="control-label"></label>
-                <input asp-for="FirstName" class="form-control"  autofocus required style="border-color: red"/>
+                <label asp-for="FirstName" class="control-label required-label"></label>
+                <input asp-for="FirstName" class="form-control"  autofocus required/>
                 <span asp-validation-for="FirstName" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="LastName" class="control-label"></label>
-                <input asp-for="LastName" class="form-control" required style="border-color: red"/>
+                <label asp-for="LastName" class="control-label required-label"></label>
+                <input asp-for="LastName" class="form-control" required/>
                 <span asp-validation-for="LastName" class="text-danger"></span>
             </div>
             
              <div class="form-group">
-                <label asp-for="Email" class="control-label"></label>
-                <input asp-for="Email" class="form-control" required style="border-color: red"/>
+                <label asp-for="Email" class="control-label required-label"></label>
+                <input asp-for="Email" class="form-control" required/>
                 <span asp-validation-for="Email" class="text-danger"></span>
                 <div>
                     Note:  Changing Email will reset the password for the new Login and the user will need to use Forgot Password with the new Email.
@@ -37,8 +37,8 @@
         </div>
         <div class="col-md-6">
            <div class="form-group">
-                <label asp-for="Phone" class="control-label"></label>
-                <input asp-for="Phone" class="form-control" required style="border-color: red"/>
+                <label asp-for="Phone" class="control-label required-label"></label>
+                <input asp-for="Phone" class="form-control" required/>
                 <span asp-validation-for="Phone" class="text-danger"></span>
             </div>
             <div class="form-group form-check">

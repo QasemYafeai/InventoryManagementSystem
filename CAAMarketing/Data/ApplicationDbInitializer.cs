@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using CAAMarketing.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 
@@ -17,7 +18,7 @@ namespace CAAMarketing.Data
                 //Create the database if it does not exist and apply the Migration
                 context.Database.Migrate();
 
-                //Create Roles
+                // Create Roles
                 var RoleManager = applicationBuilder.ApplicationServices.CreateScope()
                     .ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
                 string[] roleNames = { "Admin", "Supervisor", "Employee" };
@@ -30,9 +31,14 @@ namespace CAAMarketing.Data
                         roleResult = await RoleManager.CreateAsync(new IdentityRole(roleName));
                     }
                 }
-                //Create Users
+                // Create Users
                 var userManager = applicationBuilder.ApplicationServices.CreateScope()
                     .ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+
+                // Create an instance of ApplicationDbContext for adding InitialPassword entries
+                var dbContext = applicationBuilder.ApplicationServices.CreateScope()
+                    .ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
                 if (userManager.FindByEmailAsync("mhachem12@outlook.com").Result == null)
                 {
                     IdentityUser user = new IdentityUser
@@ -41,11 +47,36 @@ namespace CAAMarketing.Data
                         Email = "mhachem12@outlook.com"
                     };
 
-                    IdentityResult result = userManager.CreateAsync(user, "Admins@123").Result;
+                    string initialPassword = "Admins@123";
+                    IdentityResult result = userManager.CreateAsync(user, initialPassword).Result;
 
                     if (result.Succeeded)
                     {
                         userManager.AddToRoleAsync(user, "Admin").Wait();
+
+                        // Add the initial password to the InitialPasswords table
+                        dbContext.InitialPasswords.Add(new InitialPassword { UserId = user.Id, Password = initialPassword });
+                        await dbContext.SaveChangesAsync();
+                    }
+                }
+                if (userManager.FindByEmailAsync("moayedcaaproject@outlook.com").Result == null)
+                {
+                    IdentityUser user = new IdentityUser
+                    {
+                        UserName = "moayedcaaproject@outlook.com",
+                        Email = "moayedcaaproject@outlook.com"
+                    };
+
+                    string initialPassword = "Admins@1234";
+                    IdentityResult result = userManager.CreateAsync(user, initialPassword).Result;
+
+                    if (result.Succeeded)
+                    {
+                        userManager.AddToRoleAsync(user, "Admin").Wait();
+
+                        // Add the initial password to the InitialPasswords table
+                        dbContext.InitialPasswords.Add(new InitialPassword { UserId = user.Id, Password = initialPassword });
+                        await dbContext.SaveChangesAsync();
                     }
                 }
                 if (userManager.FindByEmailAsync("super@caaniagara.ca").Result == null)
@@ -56,11 +87,15 @@ namespace CAAMarketing.Data
                         Email = "super@caaniagara.ca"
                     };
 
-                    IdentityResult result = userManager.CreateAsync(user, "Supers@123").Result;
-
+                    string initialPassword = "Supers@123";
+                    IdentityResult result = userManager.CreateAsync(user, initialPassword).Result;
                     if (result.Succeeded)
                     {
                         userManager.AddToRoleAsync(user, "Supervisor").Wait();
+
+                        // Add the initial password to the InitialPasswords table
+                        dbContext.InitialPasswords.Add(new InitialPassword { UserId = user.Id, Password = initialPassword });
+                        await dbContext.SaveChangesAsync();
                     }
                 }
                 if (userManager.FindByEmailAsync("employee@caaniagara.ca").Result == null)
@@ -71,8 +106,16 @@ namespace CAAMarketing.Data
                         Email = "employee@caaniagara.ca"
                     };
 
-                    IdentityResult result = userManager.CreateAsync(user, "Emp@123").Result;
-                    //Not in any role
+                    string initialPassword = "Emp@123";
+                    IdentityResult result = userManager.CreateAsync(user, initialPassword).Result;
+                    if (result.Succeeded)
+                    {
+                        userManager.AddToRoleAsync(user, "Employee").Wait();
+
+                        // Add the initial password to the InitialPasswords table
+                        dbContext.InitialPasswords.Add(new InitialPassword { UserId = user.Id, Password = initialPassword });
+                        await dbContext.SaveChangesAsync();
+                    }
                 }
             }
             catch (Exception ex)

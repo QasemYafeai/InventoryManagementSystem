@@ -9,15 +9,15 @@
 
  
 @*FOR THE RECOVER ALL NOTIF BUTTON*@
-    @{
-        int RecoverMessageCount = Convert.ToInt32(ViewData["RecoverMessageCount"]);
-        string buttonClassForRecover = RecoverMessageCount > 0 ? "notivalue" : "WhiteClass";
-        string checkmarkIconForRecover = RecoverMessageCount > 0 ? @RecoverMessageCount.ToString() : "<img src='" + Url.Content("~/images/CheckMark.png") + "' style='height:15px; width:15px; margin-bottom:5px;' />";
-    }
+@{
+    int RecoverMessageCount = Convert.ToInt32(ViewData["RecoverMessageCount"]);
+    string buttonClassForRecover = RecoverMessageCount > 0 ? "notivalue" : "WhiteClass";
+    string checkmarkIconForRecover = RecoverMessageCount > 0 ? @RecoverMessageCount.ToString() : "<img src='" + Url.Content("~/images/CheckMark.png") + "'  class='checkmarkgreen' />";
+}
         <a style="text-decoration: none; position: relative; display: inline-block;" 
         asp-controller="Inventories" asp-action="RecoverAllSilencedNotif" 
         title="Click here to Unsilence all messages" 
-        class="btn btn-primary btn-color-Create">Recover All Messages
+        class="btn btn-primary btn-color-Create">Unsilence All
         <span class="@buttonClassForRecover">@Html.Raw(@checkmarkIconForRecover)</span>
     </a>
  @*----------------------------------*@
@@ -26,12 +26,12 @@
     @{
         int silencedMessageCount = Convert.ToInt32(ViewData["SilencedMessageCount"]);
         string buttonClassForSilents = silencedMessageCount > 0 ? "notivalue" : "WhiteClass";
-        string checkmarkIconForSilents = silencedMessageCount > 0 ? @silencedMessageCount.ToString() : "<img src='" + Url.Content("~/images/CheckMark.png") + "' style='height:15px; width:15px; margin-bottom:5px;' />";
+        string checkmarkIconForSilents = silencedMessageCount > 0 ? @silencedMessageCount.ToString() : "<img src='" + Url.Content("~/images/CheckMark.png") + "'  class='checkmarkgreen' />";
     }
     <a style="text-decoration: none; position: relative; display: inline-block;" 
         asp-controller="Inventories" asp-action="ViewSilencedNotif" 
-        title="Click here view Unsilenced messages" 
-        class="btn btn-primary btn-color-Create">View Silenced Messages
+        title="Click here to view silenced messages" 
+        class="btn btn-primary btn-color-Create">Silenced Low Stocks
         <span class="@buttonClassForSilents">@Html.Raw(@checkmarkIconForSilents)</span>
     </a>
 @*----------------------------------*@
@@ -46,23 +46,99 @@
     <a style="text-decoration: none; position: relative; display: inline-block;" 
         asp-controller="Inventories" asp-action="ViewActiveNotif" 
         title="Click here to view Active messages" 
-        class="btn btn-primary btn-color-Create">View Active Messages
+        class="btn btn-primary btn-color-Create">Active Low Stocks
         <span class="@buttonClassForActive">@Html.Raw(@checkmarkIconForActive)</span>
     </a>
  @*----------------------------------*@
 
-<form asp-action="Index" method="get">
+<form asp-controller="Items" asp-action="Index" method="get" id="filterForm">
     <input type="hidden" name="sortDirection" value="@ViewData["sortDirection"]" />
     <input type="hidden" name="sortField" value="@ViewData["sortField"]" />
+        <input type="hidden" id="scannedBarcode" name="scannedBarcode" value="">
+        
+    <!-- Help Section -->
+<div class="container my-3">
+    <button type="button" class="btn btn-info btn-color-Create" data-bs-toggle="modal" data-bs-target="#helpModal">
+        Help
+    </button>
+    <a class="btn btn-info btn-color-Create" href="@Url.Action("GetPrintableItems", "Items")">Barcode</a>
 
 
+     <!-- Help Modal -->
+    <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="helpModalLabel">How to use this page</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="list-group">
+                        <div class="list-group-item">
+                            <i class="bi bi-plus-circle-fill text-primary"></i> <strong>Create New Item:</strong> Click the "Create New Item" button to add a new item to the inventory.
+                        </div>
+                        <div class="list-group-item">
+                            <i class="bi bi-search text-success"></i> <strong>Filter/Search:</strong> Use the filter options to search for items by location or use the search box on the top of the table to quick search by name/UPC. Click "Filter" to apply the search criteria, or "Clear" to reset the filters.
+                        </div>
+                        <div class="list-group-item">
+                            <i class="bi bi-arrow-up-down text-warning"></i> <strong>Sorting:</strong> Click on the column headers (Item, UPC, Total Stock, Location, Max Quantity , Min Quantity) to sort the items by the respective criteria.
+                        </div>
+                        <div class="list-group-item">
+                            <i class="bi bi-upc text-primary"></i> <strong>Barcode:</strong> Click the "Barcode" button to go a the barcode page where you can Once print barcodes.
+                        </div>
+                        <div class="list-group-item">
+                            <i class="bi bi-arrow-repeat text-primary"></i> <strong>Recover All Messages:</strong> Click the "Recover All Messages" button to unsilence all messages.
+                        </div>
+                        <div class="list-group-item">
+                            <i class="bi bi-eye-slash text-secondary"></i> <strong>View Silenced Messages:</strong> Click the "View Silenced Messages" button to view unsilenced messages.
+                        </div>
+                        <div class="list-group-item">
+                            <i class="bi bi-eye text-info"></i> <strong>View Active Messages:</strong> Click the "View Active Messages" button to view active messages.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <button class=" btn btn-color-Create" title="Click this to scan barcodes" id="scan-barcode-btn" type="button">Scan Barcode</button>
+    <input type="hidden" id="scanned-upc-codes" />
+    <div class="quagga-scanner-container">
+        <div id="interactive" class="viewport"></div>
+        <button class="close-scanner-btn" title="Close" id="close-scanner-btn">&times;</button>
+    </div>
+</div>
     <div class="form-horizontal">
-        <a asp-controller="Items" asp-action="Create" title="Click here to create a new item" class="btn btn-primary btn-color-Create">Create New Item</a>
-        <button class="btn btn-success @(ViewData["Filtering"])" type="button" data-bs-toggle="collapse" id="filterToggle" data-bs-target="#collapseFilter" aria-expanded="false" aria-controls="collapseFilter" title="Click this to filter/search">
-            <i class="material-icons">Filter/Search</i>
+        <button class="btn btn-success @(ViewData["Filtering"]) margintop" type="button" data-bs-toggle="collapse" id="filterToggle" data-bs-target="#collapseFilter" aria-expanded="false" aria-controls="collapseFilter" title="Click this to filter/search">
+            <i>Filter/Search</i>
         </button>
     </div>
+    
     <div class="collapse" id="collapseFilter">
+<div class="modal fade" id="scanner-modal" tabindex="-1" role="dialog" aria-labelledby="scanner-modal-label" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="scanner-modal-label">Scan Barcode</h5>
+      </div>
+      <div class="modal-body">
+        <div id="scanner-container" style="position: relative; width: 100%; height: 300px;">
+          <video id="barcode-scanner" style="width: 100%; height: 100%;"></video>
+        </div>
+      </div>
+      <div class="modal-footer">
+<button type="button" class="btn btn-secondary" data-dismiss="modal" id="cancel-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+        <div id="scanner-container" style="display: none; position: relative; width: 100%; height: 300px;">
+        <video id="barcode-scanner" style="width: 100%; height: 100%;"></video>
+    </div>
         <div class="card card-body">
             <div class="row">
                 <div class="form-group col-md-4">
@@ -73,14 +149,9 @@
                 <label class="control-label">Check Low Quantity Items:</label>
                 @Html.CheckBox("LowQty", null)
                 </div>*@
-
-                <div class="form-group col-md-4">
-                    <label class="control-label">Search Item Name OR UPC:</label>
-                    @Html.TextBox("SearchString", null, new { @class = "form-control" })
-                </div>
                 <div class="form-group col-md-4 align-self-end">
-                    <input type="submit" name="actionButton" value="Filter" class="btn btn-success" />
-                    <a asp-action="Index" title="Click here to clear the filter" class="btn btn-outline-dark">Clear</a>
+                    <input type="submit" name="actionButton" value="Filter" class="btn-filter" />
+                    <a asp-action="Index" title="Click here to clear the filter" class="btn-clear-barcode">Clear</a>
                 </div>
             </div>
         </div>
@@ -97,20 +168,30 @@
         <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" id="filterToggle" data-bs-target="#collapseFilter" aria-expanded="false" aria-controls="collapseFilter" style="display: none;">
             Filter/Search
         </button>*@
-  
+  <div id="table-content">
 <div class="container-fluid">
         <div class="table-responsive">
             <div class="table-wrapper">
                 <div class="table-title d-flex justify-content-between align-items-center">
                     <h1>Inventory</h1>
-                    <div class="col-xs-7">
-                       <a asp-controller="Inventories" asp-action="InventoryReport" title="Click here to generate inventory report" class="btn btn-primary btn-color-Create"> Inventory Report</a>
+                        <div class="col-xs-7">
+                              <a asp-controller="Items" asp-action="Create" title="Click here to create a new item" class="btn btn-primary btn-color-Create">
+                                <i class="material-icons">&#xE147;</i>
+                                <span>Create New Item</span>
+                            </a>
+
+                            <div class="search-box">
+                            <div class="input-group">
+                                <input type="text" id="search" class="form-control" placeholder="Search by Item Name or UPC">
+                                <span class="input-group-addon"><i class="material-icons">&#xE8B6;</i></span>
+                            </div>
+                        </div>
                         </div>
                 </div>
                 <table class="table table-hover">
                     <thead class="thead-light">
                         <tr>
-                            <th>Item Image :</th>
+                            <th>Image:</th>
                             <th>
                                 <input type="submit" name="actionButton" value="Item" title="click here to sort by Items" class="btn btn-link" />
                             </th>
@@ -119,7 +200,7 @@
                              @*   @Html.DisplayNameFor(model => model.Item.UPC)*@
                             </th>
                             <th>
-                                <input type="submit" name="actionButton" disabled="disabled" value="Total Stock" title="click here to sort by Stock" class="btn btn-link" />
+                                <input type="submit" name="actionButton" disabled="disabled" value="Stock" title="click here to sort by Stock" class="btn btn-link" />
                              @*   @Html.DisplayNameFor(model => model.Item.UPC)*@
                             </th>
                             <th>
@@ -207,8 +288,18 @@
 
  						        <td>
                                    <a asp-controller="Items" asp-action="Edit" title="Click this to edit" class="padding-for-actions" asp-route-id="@item.ID"> Edit </a> |
-                                   <a id="details-link" asp-action="Index" asp-controller="OrderItems" title="Click this to go to details" class="padding-for-actions"  asp-route-ItemID="@item.ID"> Details   </a> |
-                                   <a asp-controller="Items" asp-action="Delete" title="Click this to archive the item" class="padding-for-actions" asp-route-id="@item.ID">Archive </a> 
+                                   <a id="details-link" asp-action="Index" asp-controller="OrderItems" title="Click this to go to details" class="padding-for-actions"  asp-route-ItemID="@item.ID"> Overview  </a> 
+                                   @{
+                                        if(item.Inventories.All(i => i.Quantity == 0) && 
+                                           item.InventoryTransfers.All(it => it.IsComfirmed) && 
+                                           item.ItemReservations.All(ir => ir.IsLoggedIn))
+                                        {
+                                            <a asp-controller="Items" asp-action="Delete" title="Click this to archive the item" class="padding-for-actions" asp-route-id="@item.ID">| Archive</a>
+                                        }
+
+                                   }
+
+                                  
 
                                     </td>
                                 </tr>
@@ -219,56 +310,96 @@
            </div>
     </div>
         <partial name="_PagingNavBar" />
-    </div>
-
+</div>
 </form>
-
-
-
+@section Styles {
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" />
+}
 @section Scripts{
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/jquery.validation/1.16.0/jquery.validate.min.js"></script>
-<script src="https://cdn.jsdelivr.net/jquery.validation/1.16.0/additional-methods.min.js"></script>
-
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script type="text/javascript">
-  var detailsLink = document.getElementById("details-link");
-  detailsLink.addEventListener("click", function(event) {
-    @{
-    HttpContextAccessor.HttpContext.Session.SetString("OrderandItemCreated", "False");
-    }
-  });
-
-  //var ActivateNotifLink = document.getElementById("nowEditActivateNotif");
-  //detailsLink.addEventListener("click", function(event) {
-    
-  //  @{HttpContextAccessor.HttpContext.Session.SetString("NotifOperation", "Activate");}
-  //  }
-  //});
-  
-  //var ActivateNotifNullLink = document.getElementById("nowEditActivateNotifNull");
-  //detailsLink.addEventListener("click", function(event) {
-    
-  //  @{HttpContextAccessor.HttpContext.Session.SetString("NotifOperation", "Activate");}
-    
-  //});
-
-  //  var SilentNotifLink = document.getElementById("nowEditNotifSilent");
-  //detailsLink.addEventListener("click", function(event) {
-    
-  //  @{HttpContextAccessor.HttpContext.Session.SetString("NotifOperation", "Silent");}
-  //  }
-  //});
-  //This is to get the ItemId when the user clicks on the notification, it will get sent over to the partial views action method
-  function setItemIdForPartialNotif(itemId) {
-    document.getElementById('selectedItemId').value = itemId;
-}
-function setItemIdForPartialNotifActivate(itemId) {
-    document.getElementById('selectedItemId1').value = itemId;
-}
+        $('#SearchString1').autocomplete({
+            minLength: 1,
+            source: '@Url.Action("GetItemUPC","Inventories")'
+        });
+        $('#SearchString2').autocomplete({
+            minLength: 1,
+            source: '@Url.Action("GetItemNames","Inventories")'
+        });
     </script>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/jquery.validation/1.16.0/jquery.validate.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/jquery.validation/1.16.0/additional-methods.min.js"></script>
+
+
+<!-- Include Bootstrap JavaScript -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.6.0/js/bootstrap.min.js"></script>
+
+
+     <script type="text/javascript">
+        var detailsLink = document.getElementById("details-link");
+        detailsLink.addEventListener("click", function(event) {
+        @{
+        HttpContextAccessor.HttpContext.Session.SetString("OrderandItemCreated", "False");
+        }
+        });
+
+        //var ActivateNotifLink = document.getElementById("nowEditActivateNotif");
+        //detailsLink.addEventListener("click", function(event) {
     
+        //  @*@{HttpContextAccessor.HttpContext.Session.SetString("NotifOperation", "Activate");}*@
+        //  }
+        //});
+  
+        //var ActivateNotifNullLink = document.getElementById("nowEditActivateNotifNull");
+        //detailsLink.addEventListener("click", function(event) {
+    
+        //  @*@{HttpContextAccessor.HttpContext.Session.SetString("NotifOperation", "Activate");}*@
+    
+        //});
+
+        //  var SilentNotifLink = document.getElementById("nowEditNotifSilent");
+        //detailsLink.addEventListener("click", function(event) {
+    
+        //  @*@{HttpContextAccessor.HttpContext.Session.SetString("NotifOperation", "Silent");}*@
+        //  }
+        //});
+        //This is to get the ItemId when the user clicks on the notification, it will get sent over to the partial views action method
+        function setItemIdForPartialNotif(itemId) {
+        document.getElementById('selectedItemId').value = itemId;
+        }
+        function setItemIdForPartialNotifActivate(itemId) {
+            document.getElementById('selectedItemId1').value = itemId;
+        }
+    </script>
+
+
+
+ <script>
+$(document).ready(function(){
+    // Activate tooltips
+    $('[data-toggle="tooltip"]').tooltip();
+
+    // Filter table rows based on searched term
+    $("#search").on("keyup", function() {
+        var term = $(this).val().toLowerCase();
+        $("table tbody tr").each(function(){
+            $row = $(this);
+            var name = $row.find("td:nth-child(2)").text().toLowerCase();
+            var upc = $row.find("td:nth-child(3)").text().toLowerCase();
+            console.log(name);
+            console.log(upc);
+            if(name.search(term) < 0 && upc.search(term) < 0){
+                $row.hide();
+            } else{
+                $row.show();
+            }
+        });
+    });
+});
+</script>
+
     <script type="text/javascript">
         $('#submitNotifActivate').click(function (event) {
             event.preventDefault();
@@ -324,11 +455,92 @@ function setItemIdForPartialNotifActivate(itemId) {
             $('#createNotifForm').find("input[type=text], textarea, select").val("");
         });
     </script>
+
+
+    @Html.Raw("<script src=\"https://unpkg.com/@zxing/library@latest/umd/index.min.js\"></script>")
+
+    <script src="~/js/barcode-scanner.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js%22%3E"></script>
+
+
+<script>
+    $(document).ready(function () {
+
+        function stopScanner() {
+            Quagga.stop();
+            $(".quagga-scanner-container").hide();
+        }
+
+        function initializeQuagga() {
+            Quagga.init({
+                inputStream: {
+                    name: "Live",
+                    type: "LiveStream",
+                    target: document.querySelector('.quagga-scanner-container .viewport'),
+                    constraints: {
+                        facingMode: "environment"
+                    }
+                },
+                decoder: {
+                    readers: ["ean_reader"]
+                }
+            }, function (error) {
+                if (error) {
+                    console.log(error);
+                    return;
+                }
+                Quagga.start();
+            });
+
+            Quagga.onDetected(function (result) {
+    var upcCode = result.codeResult.code;
+    getItemIDByUPC(upcCode, function (itemID) {
+        if (itemID) {
+            window.location.href = '/OrderItems?ItemID=' + itemID;
+        } else {
+            alert('Item not found.');
+        }
+    });
+            });
+        }
+
+        $("#scan-barcode-btn").click(function () {
+             $(".quagga-scanner-container").show();
+             initializeQuagga();
+        });
+
+        $("#close-scanner-btn").click(function () {
+            stopScanner();
+        });
+
+        function getItemIDByUPC(upcCode, callback) {
+    $.ajax({
+        url: '/Items/GetItemIDByUPC',
+        type: 'GET',
+        data: { upc: upcCode.toString() },
+        success: function (itemID) {
+            callback(itemID);
+        },
+        error: function (xhr, status, error) {
+            console.log("Error: " + error);
+            callback(null);
+        }
+    });
+}
+
+        $("#clear-filter-btn").click(function () {
+            location.reload();
+        });
+    });
+</script>
+
 }
 
 
 
 <style>
+
     .mynotification {
      /*background-color: #f60;
      color: white;*/
@@ -346,7 +558,7 @@ function setItemIdForPartialNotifActivate(itemId) {
 
 .notivalue {
   position: absolute;
-  top: -10px;
+  top: -12px;
   right: -6px;
   padding: 2px 7px;
   border-radius: 75%;
@@ -378,4 +590,34 @@ function setItemIdForPartialNotifActivate(itemId) {
 }
 
  </style>
+
+ <style>
+    .quagga-scanner-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        display: none;
+    }
+
+    .close-scanner-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: #f44336;
+        color: white;
+        font-size: 16px;
+        border: none;
+        cursor: pointer;
+        border-radius: 50%;
+        text-align: center;
+        width: 30px;
+        height: 30px;
+        line-height: 30px;
+        padding: 0;
+    }
+</style>
             

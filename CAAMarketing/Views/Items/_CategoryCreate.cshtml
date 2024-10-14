@@ -6,9 +6,14 @@
         <div class="col-md-12">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="form-group">
-                <label asp-for="Name" class="control-label">Event Name:</label>
+                <label asp-for="Name" class="control-label">Category Name:</label>
                 <input asp-for="Name" class="form-control" />
                 <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="LowCategoryThreshold" class="control-label">Low Item Threshold:</label>
+                <input asp-for="LowCategoryThreshold" class="form-control" />
+                <span asp-validation-for="LowCategoryThreshold" class="text-danger"></span>
             </div>
             <br />
             <div class="form-group">

@@ -4,65 +4,65 @@
     ViewData["Title"] = "Create";
 }
 <partial name="_addEventModal" />
-        <form asp-action="Create">
+<form asp-action="Create">
     <div class="cont">
         <div class="deimage">
-            <h1>Create new Reservations</h1><small style="color: red">*Red fields are required</small>
+            <h1>Create new Reservations</h1><small style="color: red">*required fields</small>
             <hr />
             <div class="deimage2">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
                 <div class="form-group">
-                    <label class="control-label">Choose Event</label>
+                    <label class="control-label required-label">Choose Event</label>
                     <div class="input-group">
-                        <select asp-for="EventId" class="form-control select2" asp-items="ViewBag.EventId" required style="border-color: red">
+                        <select asp-for="EventId" class="form-control select2" asp-items="ViewBag.EventId" required>
                             <option value="">None</option>
                         </select>
                         <button class="btn btn-plus" id="nowAddEvent" title="Add Event" data-bs-toggle="modal" data-bs-target="#addEventModal" type="button"></button>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label asp-for="ItemId" class="control-label"></label>
-                    <select asp-for="ItemId" class="form-control select2" asp-items="ViewBag.ItemId" required style="border-color: red">
+                    <label asp-for="ItemId" class="control-label required-label"></label>
+                    <select asp-for="ItemId" class="form-control select2" asp-items="ViewBag.ItemId" required>
                         <option value="">None</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label asp-for="LocationID" class="control-label"></label>
-                    <select asp-for="LocationID" class="form-control select2" asp-items="ViewBag.LocationID" required style="border-color: red">
+                    <label asp-for="LocationID" class="control-label required-label"></label>
+                    <select asp-for="LocationID" class="form-control select2" asp-items="ViewBag.LocationID" required>
                         <option value="">None</option>
                     </select>
                 </div>
-            <div class="form-group">
-                <label asp-for="Quantity" class="control-label"></label>
-                <input asp-for="Quantity" class="form-control" required style="border-color: red"/>
-                <span asp-validation-for="Quantity" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="ReservedDate" class="control-label"></label>
-                    <input asp-for="ReservedDate" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")" required style="border-color: red" />
-                <span asp-validation-for="ReservedDate" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="ReturnDate" class="control-label"></label>
-                    <input asp-for="ReturnDate" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")" required style="border-color: red" />
-                <span asp-validation-for="ReturnDate" class="text-danger"></span>
-            </div>
-            <div style="margin:25px">
+                <div class="form-group">
+                    <label asp-for="Quantity" class="control-label required-label"></label>
+                    <input asp-for="Quantity" class="form-control" required />
+                    <span asp-validation-for="Quantity" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="ReservedDate" class="control-label required-label"></label>
+                    <input asp-for="ReservedDate" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                    <span asp-validation-for="ReservedDate" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="ReturnDate" class="control-label required-label"></label>
+                    <input asp-for="ReturnDate" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                    <span asp-validation-for="ReturnDate" class="text-danger"></span>
+                </div>
+                <div style="margin:25px">
                     <input type="submit" title="Click here to create new Reservations " value="Create" class="btn-submit" />
                     <div class="tooltip"> <a asp-action="Index"> <img src="~/images/icons8-go-back-24.png" alt="Back Icon" /> <span class="tooltiptext">Back</span></a> </div>
                 </div>
-                </div>
             </div>
         </div>
-        </form>
+    </div>
+</form>
 
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
 
 
-        
+
     }
 
     <script src="~/js/refreshDDL.js"></script>
@@ -92,34 +92,34 @@
             refreshDDL('EventId', '/ItemReservations/GetEvents', false, null, true, 'None', true);
         });
     </script>
-    
 
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
     <script>
-    $(document).ready(function () {
-        $('.select2').select2();
-    });
-
-    $(function () {
-        // Remove select2 plugin from event dropdown when add event button is clicked
-        $('#nowAddEvent').on('click', function () {
-            $('select[name="EventId"]').select2('destroy');
+        $(document).ready(function () {
+            $('.select2').select2();
         });
+
+        $(function () {
+            // Remove select2 plugin from event dropdown when add event button is clicked
+            $('#nowAddEvent').on('click', function () {
+                $('select[name="EventId"]').select2('destroy');
+            });
 
             $('#nowAddEvent').on('click', function () {
                 $('select[name="ItemId"]').select2('destroy');
             });
 
-        // Add select2 plugin back to event dropdown when add event modal is hidden
-        $('#addEventModal').on('hidden.bs.modal', function () {
-            $('select[name="EventId"]').select2();
-        });
+            // Add select2 plugin back to event dropdown when add event modal is hidden
+            $('#addEventModal').on('hidden.bs.modal', function () {
+                $('select[name="EventId"]').select2();
+            });
 
             // Add select2 plugin back to event dropdown when add event modal is hidden
             $('#addEventModal').on('hidden.bs.modal', function () {
                 $('select[name="ItemId"]').select2();
             });
-    });
-</script>
+        });
+    </script>
 }

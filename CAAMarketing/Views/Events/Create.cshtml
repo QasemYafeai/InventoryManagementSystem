@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Create";
 }
+<link rel="stylesheet" href="~/css/EventCreate.css" asp-append-version="true" />
 
 
 <div class="container">
@@ -27,113 +28,50 @@
     <meta name="viewport" content="width=device-width" />
 </head>
 <body>
-        <form asp-action="Create">
-            <div class="cont">
-             <div class="deimage">
+    <form asp-action="Create">
+        <div class="cont">
+            <div class="deimage">
                 <h1 style="padding-top:15px"><u><b>Step 1:</b></u></h1><h2>Create The Event:</h2>
-                <hr /><small style="color: red">*Red fields are required</small>
-                            <div class="deimage2">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Name" class="control-label"></label>
-                        <input asp-for="Name" class="form-control" required style="border-color: red" />
-                <span asp-validation-for="Name" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Description" class="control-label"></label>
-                <input asp-for="Description" class="form-control" />
-                <span asp-validation-for="Description" class="text-danger"></span>
-            </div>
-
-
-            <div class="form-group">
-                <label asp-for="ReservedEventDate" class="control-label"></label>
-                <input asp-for="ReservedEventDate" class="form-control" required style="border-color: red" />
-                <span asp-validation-for="ReservedEventDate" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="ReturnEventDate" class="control-label"></label>
-                 <input asp-for="ReturnEventDate" class="form-control" required style="border-color: red" />
-                <span asp-validation-for="ReturnEventDate" class="text-danger"></span>
-            </div>
+                <hr /><small style="color: red">* required fields</small>
+                <div class="deimage2">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                     <div class="form-group">
-                <label asp-for="location" class="control-label"></label>
-                        <input asp-for="location" class="form-control" required style="border-color: red" />
-                <span asp-validation-for="location" class="text-danger"></span>
-            </div>
-                            <div style="margin:25px">
-                                <input type="submit" title="Click here to create new Event" value="Create" class="btn-submit" />
-                                <div class="tooltip"> <a href='@ViewData["returnURL"]' > <img src="~/images/icons8-go-back-24.png" alt="Back Icon"/> <span class="tooltiptext">Back</span></a> </div>
-            </div>
-                        </div>
+                        <label asp-for="Name" class="control-label required-label"></label>
+                        <input asp-for="Name" class="form-control" placeholder="Ex.CAA Celebration" require d />
+                        <span asp-validation-for="Name" class="text-danger"></span>
                     </div>
+                    <div class="form-group">
+                        <label asp-for="Description" class="control-label "></label>
+                        <textarea asp-for="Description" placeholder="ex.20 year of success" class="form-control"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+
+
+                    <div class="form-group">
+                        <label asp-for="ReservedEventDate" class="control-label required-label"></label>
+                        <input asp-for="ReservedEventDate" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                        <span asp-validation-for="ReservedEventDate" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="ReturnEventDate" class="control-label required-label"></label>
+                        <input asp-for="ReturnEventDate" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                        <span asp-validation-for="ReturnEventDate" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="location" class="control-label required-label"></label>
+                        <input asp-for="location" class="form-control" placeholder="ex.Welland" required />
+                        <span asp-validation-for="location" class="text-danger"></span>
+                    </div>
+
                 </div>
-        </form>
+                <div style="margin:25px">
+                    <input type="submit" title="Click here to create new Event" value="Create" class="btn-submit" />
+                    <div class="tooltip"> <a href='@ViewData["returnURL"]'> <img src="~/images/icons8-go-back-24.png" alt="Back Icon" /> <span class="tooltiptext">Back</span></a> </div>
+                </div>
+            </div>
+        </div>
+    </form>
 </body>
 </html>
 
 
-
-<style>
-    .container {
-        width: 100%;
-    }
-
-    .progressbar {
-        counter-reset: step;
-    }
-
-        .progressbar li {
-            list-style: none;
-            display: inline-block;
-            width: 30.33%;
-            position: relative;
-            text-align: center;
-            cursor: pointer;
-        }
-
-            .progressbar li:before {
-                content: counter(step);
-                counter-increment: step;
-                width: 30px;
-                height: 30px;
-                line-height: 30px;
-                border: 1px solid #ddd;
-                border-radius: 100%;
-                display: block;
-                text-align: center;
-                margin: 0 auto 10px auto;
-                background-color: #fff;
-            }
-
-            .progressbar li:after {
-                content: "";
-                position: absolute;
-                width: 100%;
-                height: 1px;
-                background-color: #ddd;
-                top: 15px;
-                left: -50%;
-                z-index: -1;
-            }
-
-            .progressbar li:first-child:after {
-                content: none;
-            }
-
-            .progressbar li.active {
-                color: green;
-            }
-
-                .progressbar li.active:before {
-                    border-color: green;
-                }
-
-                .progressbar li.active + li:after {
-                    background-color: green;
-                }
-
-    .select2 {
-        border-color: red !important;
-    }
-</style>
